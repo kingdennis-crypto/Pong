@@ -271,13 +271,29 @@ movePaddles proc near
         ret
 
     movePaddleUp:
+        mov ax, paddleLeftY
+        
+        ; paddleLeftY > 0 -> Out of bounds
+        cmp ax, 0
+        jle endFunction
+
         mov ax, paddleMoveOffset
+
         sub paddleLeftY, ax
         sub paddleRightY, ax
         ret
 
     movePaddleDown:
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        add ax, windowBounds
+
+        ; (paddleLeftY + paddleHeight + windowBounds) > windowHeight -> Out of bounds
+        cmp ax, windowHeight
+        jge endFunction
+
         mov ax, paddleMoveOffset
+
         add paddleLeftY, ax
         add paddleRightY, ax
         ret
