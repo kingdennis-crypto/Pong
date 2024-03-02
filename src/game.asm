@@ -16,6 +16,9 @@ data segment para 'data'
     paddleWidth        dw 06h  ; Default paddle width
     paddleHeight       dw 35h  ; Default paddle height
     paddleVelocity     dw 0Fh  ; Default paddle velocity
+    paddleMoveOffset   dw 10h  ; Offset of paddle movement
+
+    keyPressed         db 00h
 data ends
 
 code segment para 'code'
@@ -33,29 +36,50 @@ main proc far
     ; Initialize Graphics Mode 13 320x200 resolution with 256 colors
     call clearScreen
 
-    call drawPaddles
+    gameLoop:
+        ; Listen for keypress
+        call listenForKeyPress
 
-    ;mov ah, 0Ch             ; Set the configuration to writing a pixel
-    ;mov al, 0Fh             ; Choose white as color
-    ;mov bh, 00h             ; Set the page number
-    ;mov cx, 30h              ; CX -> paddle left x coordinates
-    ;mov dx, 10h              ; DX -> paddle left y coordinates
-    ;int 10h                 ; Execute
+        call drawPaddles
+        call movePaddles
 
-    ;mov ah, 0Ch             ; Set the configuration to writing a pixel
-    ;mov al, 0Fh             ; Choose white as color
-    ;mov bh, 00h             ; Set the page number
-    ;mov cx, 20h              ; CX -> paddle left x coordinates
-    ;mov dx, 10h              ; DX -> paddle left y coordinates
-    ;int 10h                 ; Execute
+        jmp gameLoop
+main endp
 
-    ; Wait for a keypres
+listenForKeyPress proc near
+    ; Check if any key is being pressed
+    mov ah, 01h
+    int 16h
+
+    ; Jump if no key was pressed
+    jz noKeyPressed
+
+    ; Check which key is being pressed
     mov ah, 00h
     int 16h
+
+    ; If key is 'E' end game
+    cmp al, 45h
+    je startExitProcedure
+
+    ; If key is 'e' end game
+    cmp al, 65h
+    je startExitProcedure
+
+    mov keyPressed, al
+    jmp endListen
+
+    noKeyPressed:
+        mov keyPressed, 00h
+        jmp endListen
+
+    startExitProcedure:
+        call exitGame
+        ret
     
-    ; Terminates the game
-    call exitGame
-main endp
+    endListen:
+        ret
+listenForKeyPress endp
 
 ; Draw the left and right paddles
 drawPaddles proc near
@@ -117,6 +141,33 @@ drawPaddles proc near
     ret
 drawPaddles endp
 
+movePaddles proc near
+    cmp keyPressed, 57h ; W
+    je  movePaddleUp
+
+    cmp keyPressed, 77h ; w
+    je movePaddleUp
+
+    cmp keyPressed, 53h ; S
+    je movePaddleDown
+
+    cmp keyPressed, 73h ; s
+    je movePaddleDown
+
+    endFunction:
+        ret
+
+    movePaddleUp:
+        mov ax, paddleMoveOffset
+        sub paddleLeftY, ax
+        ret
+
+    movePaddleDown:
+        mov ax, paddleMoveOffset
+        add paddleLeftY, ax
+        ret
+movePaddles endp
+
 ; Clear the screen by restarting the video mode
 clearScreen proc near
     mov ah, 00h         ; Set the configuration to video mode
@@ -139,6 +190,8 @@ exitGame proc near
 
     mov ah, 4Ch         ; Terminate the program
     int 21h
+
+    ret
 exitGame endp
 
 code ends
