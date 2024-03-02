@@ -5,7 +5,7 @@ stack ends
 data segment para 'data'
     windowWidth        dw 140h ; The width of the window (320 pixels)
     windowHeight       dw 0C8h ; The height of the window (200 pixels)
-    windowBounds       dw 6    ; Variable used to check for collision early
+    windowBounds       dw 06h  ; Variable used to check for collision early
 
     paddleLeftX        dw 0Ah  ; Current x position of the left paddle
     paddleLeftY        dw 40h  ; Current y position of the left paddle  
@@ -25,7 +25,7 @@ data segment para 'data'
     ballSize           dw 06h
     ballVelocityX      dw 01h
     ballVelocityY      dw 01h
-    ballBorderWidth    dw 02h
+    ballBorderWidth    dw 04h
 data ends
 
 code segment para 'code'
@@ -50,10 +50,7 @@ main proc far
         call movePaddles
         call drawPaddles
 
-        ; call moveBall
-        mov ax, ballVelocityX
-        add ballX, ax
-
+        call moveBall
         call drawBall
 
         jmp gameLoop
@@ -332,6 +329,8 @@ drawBall proc near
             cmp dx, ballY
             jl  notInsideBall
 
+            ; TODO: Add also a check to see if the not inside ball is colliding with a paddle
+
             mov ax, ballY
             add ax, ballSize
             cmp dx, ax
@@ -380,52 +379,70 @@ moveBall proc near
     mov ax, ballVelocityX
     add ballX, ax
 
-    ; Check if the ball hit the left paddle
-    mov ax, ballX
-    mov di, paddleLeftX
-    add di, paddleWidth
-
-    cmp ax, di
-    je  negateMovementBallHorizontal
-
-    mov ax, ballX
-    mov di, paddleRightX
-    
-    cmp ax, di
-    je  negateMovementBallHorizontal
+    ; Move ball vertical
+    mov ax, ballVelocityY
+    add ballY, ax
 
     ; Check if the ball has passed the top boundary
-    ; mov ax, windowBounds
-    ; cmp ballY, ax
-    ; jl negateMovementBallVertical
+    mov ax, windowBounds
+    cmp ballY, ax
+    jle negateMovementBallVertical
 
-    ; ; Check if the ball has passed the bottom boundary
-    ; mov ax, windowHeight
-    ; sub ax, ballSize
-    ; sub ax, windowBounds
-    ; cmp ballY, ax
-    ; jg negateMovementBallVertical
+    ; Check if the ball has passed the bottom boundary
+    mov ax, windowHeight
+    sub ax, ballSize
+    sub ax, windowBounds
+    cmp ballY, ax
+    jge negateMovementBallVertical
 
+    ; Check to see if the ball has touched the left side of the window
+    mov ax, windowBounds
+    cmp ballX, ax
+    jle resetBallPosition
+    
     ; Check if the ball collides with the left paddle
-    ; mov ax, ballX
-    ; add ax, ballSize
-    ; cmp ax, paddleLeftX
-    ; ; TODO: Maybe change this to the right of the paddle, not the left of the paddle
-    ; jng noCollision
+    mov ax, ballX
+    sub ax, paddleWidth
+    cmp ax, paddleLeftX
+    je  checkLeftPaddleCollision
 
-    ; mov ax, paddleLeftX
-    ; add ax, paddleWidth
-    ; cmp ballX, ax
-    ; jnl noCollision
+    ; Check if the ball collides with the right paddle
+    mov ax, ballX
+    add ax, ballSize
+    cmp ax, paddleRightX
+    je  negateMovementBallHorizontal 
 
-    ; mov ax, ballY
-    ; add ax, ballSize
-    ; cmp ax, paddleLeftY
-    ; jng noCollision
+    ; Check to see if the ball has touched the right side of the window
+    mov ax, windowWidth
+    sub ax, ballSize
+    sub ax, windowBounds
+    cmp ballX, ax
+    jge resetBallPosition
 
-    ; mov ax, paddleLeftY
-    ; add ax, paddleHeight
+    ; On no collision close subroutine
+    jmp noCollision
 
+    ; Teleport the ball to the start coordinates and move to right
+    resetBallPosition:
+        mov ballX, 0A0h
+        mov ballY, 64h
+
+        ; TODO: Add a check so that if player 1 scored it moves to player 1.
+        ;  If player 2 scored, moves to player 2
+        jmp moveBallHorizontal
+        ret
+
+    checkLeftPaddleCollision:
+        mov ax, ballY
+        add ax, ballSize
+        cmp ax, paddleLeftY
+        jle negateMovementBallHorizontal
+
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        cmp ax, ballY
+        jge negateMovementBallHorizontal
+        ret
 
     ; Move the ball vertical
     moveBallVertical:
