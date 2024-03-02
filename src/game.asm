@@ -40,8 +40,9 @@ main proc far
         ; Listen for keypress
         call listenForKeyPress
 
-        call drawPaddles
         call movePaddles
+        ; call clearPaddles
+        call drawPaddles
 
         jmp gameLoop
 main endp
@@ -87,6 +88,33 @@ drawPaddles proc near
     ;   FOR col from paddleX to paddleX + paddleWidth:
     ;     DrawPixel(col, row, WHITE)
 
+    ; Initialize coordinates (X,Y)
+    mov dx, paddleLeftY
+    sub dx, paddleMoveOffset    ; Y - offset
+
+    mov cx, paddleLeftX
+    jmp abovePaddleBlackCol
+
+    abovePaddleBlackRow:
+        mov cx, paddleLeftX
+        inc dx
+
+        abovePaddleBlackCol:
+            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            mov al, 00h             ; Choose black as color
+            mov bh, 00h             ; Set the page number
+            int 10h                 ; Execute
+
+            inc cx
+
+            mov ax, cx
+            sub ax, paddleLeftX
+            cmp ax, paddleWidth
+            jle abovePaddleBlackCol
+        
+        cmp dx, paddleLeftY
+        jl abovePaddleBlackRow
+
     ; Initialize row index (Y-coordinate)
     mov cx, paddleLeftX             ; X
     mov dx, paddleLeftY             ; Y
@@ -112,6 +140,34 @@ drawPaddles proc near
         sub ax, paddleLeftY
         cmp ax, paddleHeight
         jle drawLeftRow
+
+    mov cx, paddleLeftY
+    add cx, paddleHeight    ; Y + height
+    jmp underPaddleBlackCol
+
+    underPaddleBlackRow:
+        mov cx, paddleLeftX
+        inc dx
+
+        underPaddleBlackCol:
+            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            mov al, 00h             ; Choose black as color
+            mov bh, 00h             ; Set the page number
+            int 10h                 ; Execute
+
+            inc cx
+
+            mov ax, cx
+            sub ax, paddleLeftX
+            cmp ax, paddleWidth
+            jle underPaddleBlackCol
+        
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        add ax, paddleMoveOffset
+
+        cmp dx, ax
+        jle underPaddleBlackRow
 
     mov cx, paddleRightX            ; X
     mov dx, paddleRightY            ; Y
