@@ -5,7 +5,7 @@ stack ends
 data segment para 'data'
     windowWidth        dw 140h ; The width of the window (320 pixels)
     windowHeight       dw 0C8h ; The height of the window (200 pixels)
-    windowBounds       dw 06h  ; Variable used to check for collision early
+    windowBounds       dw 04h  ; Variable used to check for collision early
 
     paddleLeftX        dw 0Ah  ; Current x position of the left paddle
     paddleLeftY        dw 40h  ; Current y position of the left paddle  
@@ -52,6 +52,7 @@ main proc far
 
         call moveBall
         call drawBall
+        call checkPaddleBoundaries
 
         jmp gameLoop
 main endp
@@ -383,89 +384,82 @@ moveBall proc near
     mov ax, ballVelocityY
     add ballY, ax
 
-    ; Check if the ball has passed the top boundary
+    ; Check if the ball has passed the top window boundary
     mov ax, windowBounds
     cmp ballY, ax
     jle negateMovementBallVertical
 
-    ; Check if the ball has passed the bottom boundary
+    ; Check if the ball has passed the bottom window boundary
     mov ax, windowHeight
     sub ax, ballSize
     sub ax, windowBounds
     cmp ballY, ax
     jge negateMovementBallVertical
-
-    ; Check to see if the ball has touched the left side of the window
-    mov ax, windowBounds
-    cmp ballX, ax
-    jle resetBallPosition
     
-    ; Check if the ball collides with the left paddle
-    mov ax, ballX
-    sub ax, paddleWidth
-    cmp ax, paddleLeftX
-    je  checkLeftPaddleCollision
-
-    ; Check if the ball collides with the right paddle
-    mov ax, ballX
-    add ax, ballSize
-    cmp ax, paddleRightX
-    je  negateMovementBallHorizontal 
-
-    ; Check to see if the ball has touched the right side of the window
-    mov ax, windowWidth
-    sub ax, ballSize
-    sub ax, windowBounds
-    cmp ballX, ax
-    jge resetBallPosition
-
-    ; On no collision close subroutine
-    jmp noCollision
+    ; No collision closes subroutine
+    ret
 
     ; Teleport the ball to the start coordinates and move to right
     resetBallPosition:
         mov ballX, 0A0h
         mov ballY, 64h
-
-        ; TODO: Add a check so that if player 1 scored it moves to player 1.
-        ;  If player 2 scored, moves to player 2
-        jmp moveBallHorizontal
         ret
 
-    checkLeftPaddleCollision:
-        mov ax, ballY
-        add ax, ballSize
-        cmp ax, paddleLeftY
-        jle negateMovementBallHorizontal
-
-        mov ax, paddleLeftY
-        add ax, paddleHeight
-        cmp ax, ballY
-        jge negateMovementBallHorizontal
-        ret
-
-    ; Move the ball vertical
-    moveBallVertical:
-        mov ax, ballVelocityY
-        add ballY, ax
-        ret
-
-    moveBallHorizontal:
-        mov ax, ballVelocityX
-        add ballX, ax
-        ret
-
+    ; Negate the ball verticalically
     negateMovementBallVertical:
         neg ballVelocityY
         ret
+moveBall endp
+
+checkPaddleBoundaries proc near
+    ; Check if the ball collides with the left paddle
+    mov ax, ballX
+    sub ax, ballSize
+    cmp ax, paddleLeftX
+    jle checkCollisionLeftPaddle
+
+    ; Check if the ball collides with the right paddle
+    mov ax, ballX
+    add ax, ballSize
+    cmp ax, paddleRightX
+    jge checkCollisionRightPaddle
+
+    jmp noCollision
+
+    checkCollisionLeftPaddle:
+        mov ax, ballY
+        add ax, ballSize
+        cmp ax, paddleLeftY
+        jl  noCollision
+        
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        cmp ballY, ax
+        jg  noCollision
+
+        jmp negateMovement
+
+    checkCollisionRightPaddle:
+        mov ax, ballY
+        add ax, ballSize
+        cmp ax, paddleRightY
+        jl  noCollision
+
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        cmp ballY, ax
+        jg  noCollision
+
+        jmp negateMovement
     
-    negateMovementBallHorizontal:
+    negateMovement:
         neg ballVelocityX
         ret
-    
+
     noCollision:
         ret
-moveBall endp
+
+checkPaddleBoundaries endp
 
 ; Clear the screen by restarting the video mode
 clearScreen proc near
