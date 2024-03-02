@@ -47,7 +47,8 @@ main proc far
     pop     ax
 
     ; Initialize Graphics Mode 13 320x200 resolution with 256 colors
-    call clearScreen
+    call initializeVideo
+
 
     gameLoop:
         ; Listen for keypress
@@ -516,7 +517,7 @@ playerTwoScores proc near
 playerTwoScores endp
 
 ; Clear the screen by restarting the video mode
-clearScreen proc near
+initializeVideo proc near
     mov ah, 00h         ; Set the configuration to video mode
     mov al, 13h         ; Select the video mode
     int 10h             ; Execute
@@ -527,6 +528,18 @@ clearScreen proc near
     int 10h             ; Execute
 
     ret
+initializeVideo endp
+
+; Set all pixels on the screen to black
+clearScreen proc near
+    mov al, 00h     ; Set black as color
+    mov ah, al      ; Duplicate the color value
+    mov bx, 00h
+    mov ex, bx      ; Set ES to start of the VGA
+    mov cx, 32000   ; Set CX to the number of words
+    mov di, 0       ; Set DI to pixel offset 0
+
+    rep stosw
 clearScreen endp
 
 ; Go back to text mode
