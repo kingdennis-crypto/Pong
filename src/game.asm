@@ -143,13 +143,13 @@ drawPaddles proc near
 
     mov cx, paddleLeftY
     add cx, paddleHeight    ; Y + height
-    jmp underPaddleBlackCol
+    jmp underLeftPaddleBlackCol
 
-    underPaddleBlackRow:
+    underLefPaddleBlackRow:
         mov cx, paddleLeftX
         inc dx
 
-        underPaddleBlackCol:
+        underLeftPaddleBlackCol:
             mov ah, 0Ch             ; Set the configuration to writing a pixel
             mov al, 00h             ; Choose black as color
             mov bh, 00h             ; Set the page number
@@ -160,19 +160,48 @@ drawPaddles proc near
             mov ax, cx
             sub ax, paddleLeftX
             cmp ax, paddleWidth
-            jle underPaddleBlackCol
+            jle underLeftPaddleBlackCol
         
         mov ax, paddleLeftY
         add ax, paddleHeight
         add ax, paddleMoveOffset
 
         cmp dx, ax
-        jle underPaddleBlackRow
+        jle underLefPaddleBlackRow
 
-    mov cx, paddleRightX            ; X
+    ; mov cx, paddleRightX            ; X
+    ; mov dx, paddleRightY            ; Y
     mov dx, paddleRightY            ; Y
+    sub dx, paddleMoveOffset        ; Y - offset
+
+    mov cx, paddleRightX
+    jmp aboveRightPaddleBlackCol
     
-    drawRighRow:
+    aboveRightPaddleBlackRow:
+        mov cx, paddleRightX
+        inc dx
+
+        aboveRightPaddleBlackCol:
+            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            mov al, 00h             ; Choose black as color
+            mov bh, 00h             ; Set the page number
+            int 10h                 ; Execute
+
+            inc cx
+
+            mov ax, cx
+            sub ax, paddleRightX
+            cmp ax, paddleWidth
+            jle aboveRightPaddleBlackCol
+
+        cmp dx, paddleRightY
+        jl aboveRightPaddleBlackRow
+
+    mov cx, paddleRightX
+    mov dx, paddleRightY
+    jmp drawRightCol
+
+    drawRightRow:
         mov cx, paddleRightX
         inc dx
 
@@ -192,7 +221,35 @@ drawPaddles proc near
         mov ax, dx
         sub ax, paddleRightY
         cmp ax, paddleHeight
-        jle drawRighRow
+        jle drawRightRow
+
+    mov cx, paddleRightY
+    add cx, paddleHeight
+    jmp underRightPaddleBlackCol
+
+    underRightPaddleBlackRow:
+        mov cx, paddleRightX
+        inc dx
+
+        underRightPaddleBlackCol:
+            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            mov al, 00h             ; Choose black as color
+            mov bh, 00h             ; Set the page number
+            int 10h                 ; Execute
+
+            inc cx
+
+            mov ax, cx
+            sub ax, paddleRightX
+            cmp ax, paddleWidth
+            jle underRightPaddleBlackCol
+        
+        mov ax, paddleRightY
+        add ax, paddleHeight
+        add ax, paddleMoveOffset
+
+        cmp dx, ax
+        jle underRightPaddleBlackRow
 
     ret
 drawPaddles endp
@@ -216,11 +273,13 @@ movePaddles proc near
     movePaddleUp:
         mov ax, paddleMoveOffset
         sub paddleLeftY, ax
+        sub paddleRightY, ax
         ret
 
     movePaddleDown:
         mov ax, paddleMoveOffset
         add paddleLeftY, ax
+        add paddleRightY, ax
         ret
 movePaddles endp
 
