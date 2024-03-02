@@ -23,6 +23,9 @@ data segment para 'data'
     ballX              dw 0A0h
     ballY              dw 64h
     ballSize           dw 06h
+    ballVelocityX      dw 01h
+    ballVelocityY      dw 01h
+    ballBorderWidth    dw 02h
 data ends
 
 code segment para 'code'
@@ -46,6 +49,10 @@ main proc far
 
         call movePaddles
         call drawPaddles
+
+        ; call moveBall
+        mov ax, ballVelocityX
+        add ballX, ax
 
         call drawBall
 
@@ -305,33 +312,143 @@ movePaddles proc near
 movePaddles endp
 
 drawBall proc near
-    mov cx, ballX
-    mov dx, ballY
+    mov cx, ballX       ; X
+    mov dx, ballY       ; Y
 
+    ; Start coordinates
+    sub cx, ballBorderWidth          ; X - borderWidth
+    sub dx, ballBorderWidth          ; Y - borderWidth
+
+    jmp drawHorizontal
+
+    ; from startY to (startY + ballSize + 2 * borderWidth - 1)
     drawVertical:
         mov cx, ballX
+        sub cx, ballBorderWidth
         inc dx
 
         drawHorizontal:
-            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            ; Check if inside the ball boundaries
+            cmp dx, ballY
+            jl  notInsideBall
+
+            mov ax, ballY
+            add ax, ballSize
+            cmp dx, ax
+            jge notInsideBall
+
+            cmp cx, ballX
+            jl notInsideBall
+
+            mov ax, ballX
+            add ax, ballSize
+            cmp cx, ax
+            jge notInsideBall
+
+            ; Inside the ball boundaries, choose white as color
             mov al, 0Fh             ; Choose white as color
-            mov bh, 00h             ; Set the page number
-            int 10h                 ; Execute
+            jmp insideBall
 
-            inc cx
+            notInsideBall:
+                ; Outise the ball boundary, choose black as color
+                mov al, 00h
+            
+            insideBall:
+                mov ah, 0Ch             ; Set the configuration to writing a pixel
+                mov bh, 00h             ; Set the page number
+                int 10h                 ; Execute
+            
+                inc cx                  ; Increment the X-coordinate
 
-            mov ax, cx
-            sub ax, ballX
-            cmp ax, ballSize
-            jle drawHorizontal
+                mov ax, cx
+                sub ax, ballX
+                sub ax, ballBorderWidth
+                cmp ax, ballSize
+                jle drawHorizontal
         
         mov ax, dx
         sub ax, ballY
+        sub ax, ballBorderWidth
         cmp ax, ballSize
         jle drawVertical
 
     ret
 drawBall endp
+
+moveBall proc near
+    ; Move ball horizontal
+    mov ax, ballVelocityX
+    add ballX, ax
+
+    ; Check if the ball hit the left paddle
+    mov ax, ballX
+    mov di, paddleLeftX
+    add di, paddleWidth
+
+    cmp ax, di
+    je  negateMovementBallHorizontal
+
+    mov ax, ballX
+    mov di, paddleRightX
+    
+    cmp ax, di
+    je  negateMovementBallHorizontal
+
+    ; Check if the ball has passed the top boundary
+    ; mov ax, windowBounds
+    ; cmp ballY, ax
+    ; jl negateMovementBallVertical
+
+    ; ; Check if the ball has passed the bottom boundary
+    ; mov ax, windowHeight
+    ; sub ax, ballSize
+    ; sub ax, windowBounds
+    ; cmp ballY, ax
+    ; jg negateMovementBallVertical
+
+    ; Check if the ball collides with the left paddle
+    ; mov ax, ballX
+    ; add ax, ballSize
+    ; cmp ax, paddleLeftX
+    ; ; TODO: Maybe change this to the right of the paddle, not the left of the paddle
+    ; jng noCollision
+
+    ; mov ax, paddleLeftX
+    ; add ax, paddleWidth
+    ; cmp ballX, ax
+    ; jnl noCollision
+
+    ; mov ax, ballY
+    ; add ax, ballSize
+    ; cmp ax, paddleLeftY
+    ; jng noCollision
+
+    ; mov ax, paddleLeftY
+    ; add ax, paddleHeight
+
+
+    ; Move the ball vertical
+    moveBallVertical:
+        mov ax, ballVelocityY
+        add ballY, ax
+        ret
+
+    moveBallHorizontal:
+        mov ax, ballVelocityX
+        add ballX, ax
+        ret
+
+    negateMovementBallVertical:
+        neg ballVelocityY
+        ret
+    
+    negateMovementBallHorizontal:
+        neg ballVelocityX
+        ret
+    
+    noCollision:
+        ret
+moveBall endp
 
 ; Clear the screen by restarting the video mode
 clearScreen proc near
