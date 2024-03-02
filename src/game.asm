@@ -19,6 +19,10 @@ data segment para 'data'
     paddleMoveOffset   dw 10h  ; Offset of paddle movement
 
     keyPressed         db 00h
+
+    ballX              dw 0A0h
+    ballY              dw 64h
+    ballSize           dw 06h
 data ends
 
 code segment para 'code'
@@ -41,8 +45,9 @@ main proc far
         call listenForKeyPress
 
         call movePaddles
-        ; call clearPaddles
         call drawPaddles
+
+        call drawBall
 
         jmp gameLoop
 main endp
@@ -298,6 +303,35 @@ movePaddles proc near
         add paddleRightY, ax
         ret
 movePaddles endp
+
+drawBall proc near
+    mov cx, ballX
+    mov dx, ballY
+
+    drawVertical:
+        mov cx, ballX
+        inc dx
+
+        drawHorizontal:
+            mov ah, 0Ch             ; Set the configuration to writing a pixel
+            mov al, 0Fh             ; Choose white as color
+            mov bh, 00h             ; Set the page number
+            int 10h                 ; Execute
+
+            inc cx
+
+            mov ax, cx
+            sub ax, ballX
+            cmp ax, ballSize
+            jle drawHorizontal
+        
+        mov ax, dx
+        sub ax, ballY
+        cmp ax, ballSize
+        jle drawVertical
+
+    ret
+drawBall endp
 
 ; Clear the screen by restarting the video mode
 clearScreen proc near
