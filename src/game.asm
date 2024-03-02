@@ -26,6 +26,12 @@ data segment para 'data'
     ballVelocityX      dw 01h
     ballVelocityY      dw 01h
     ballBorderWidth    dw 04h
+
+    playerOnePoints    db 0
+    playerTwoPoints    db 1
+
+    playerOnePointsText db '0', '$'
+    playerTwoPointsText db '0', '$'
 data ends
 
 code segment para 'code'
@@ -52,7 +58,9 @@ main proc far
 
         call moveBall
         call drawBall
-        call checkPaddleBoundaries
+        ; call checkPaddleBoundaries
+
+        call drawUI
 
         jmp gameLoop
 main endp
@@ -460,6 +468,52 @@ checkPaddleBoundaries proc near
         ret
 
 checkPaddleBoundaries endp
+
+drawUI proc near
+    ; Draw left player points
+    mov ah, 02h                     ; Set cursor position
+    mov bh, 00h                     ; Set page number
+    mov dh, 01h                     ; Set row
+    mov dl, 06h                     ; Set column
+    int 10h
+
+    mov ah, 09h                     ; Write string to the standard output
+    lea dx, playerOnePointsText     ; Load playerOnePoints into DX
+    int 21h                         ; Print the string
+
+    ; Draw right player points
+    mov ah, 02h                     ; Set cursor position
+    mov bh, 00h                     ; Set page number
+    mov dh, 01h                     ; Set row
+    mov dl, 1Fh                     ; Set column
+    int 10h
+
+    mov ah, 09h                     ; Write string to the standard output
+    lea dx, playerTwoPointsText     ; Load playerOnePoints into DX
+    int 21h                         ; Print the string
+
+    ret
+drawUI endp
+
+playerOneScores proc near
+    xor ax, ax
+    mov al, playerOnePoints
+
+    add al, 30h
+    mov [playerOnePointsText], al
+
+    ret
+playerOneScores endp
+
+playerTwoScores proc near
+    xor ax, ax
+    mov al, playerTwoPoints
+
+    add al, 30h
+    mov [playerTwoPointsText], al
+
+    ret
+playerTwoScores endp
 
 ; Clear the screen by restarting the video mode
 clearScreen proc near
