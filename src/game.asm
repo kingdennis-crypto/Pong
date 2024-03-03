@@ -34,6 +34,9 @@ data segment para 'data'
 
     playerOnePointsText db '0', '$'
     playerTwoPointsText db '0', '$'
+
+    waitTimer          db 3
+    waitTimerText      db '3', '$'
 data ends
 
 code segment para 'code'
@@ -421,13 +424,13 @@ moveBall proc near
     jmp checkPaddleCollisions
 
     leftOutOfBounds:
-        call resetGame
         call playerTwoScores
+        call resetGame
         ret
 
     rightOutOfBounds:
-        call resetGame
         call playerOneScores
+        call resetGame
         ret
 
     negateMovementVertical:
@@ -501,6 +504,20 @@ drawUI proc near
     ret
 drawUI endp
 
+drawTimer proc near
+    mov ah, 02h
+    mov bh, 00h
+    mov dh, 04h
+    mov dl, 06h
+    int 10h
+
+    mov ah, 09h
+    lea dx, waitTimerText
+    int 21h
+
+    ret
+drawTimer endp
+
 resetGame proc near
     mov paddleLeftY, 40h
     mov paddleRightY, 40h
@@ -509,14 +526,60 @@ resetGame proc near
     mov ballY, 64h
 
     call initializeVideoMode
+    call drawPaddles
+    call drawBall
+    call drawUI
 
     ; TODO: Add a delay with a timer for the user to know when it stops
+    ; Add a delay of 1 second
+    ; Increment counter
+    mov waitTimer, 3
+    mov ah, 3h
+    add ah, 30h
+    mov [waitTimerText], ah
+    call drawTimer
+
+    ; 1 Second delay
+    mov cx, 0Fh
+    mov dx, 4240h
+    mov ah, 86h
+    int 15h
+
+    mov waitTimer, 2
+    mov ah, 2h
+    add ah, 30h
+    mov [waitTimerText], ah
+    call drawTimer
+    
+    mov cx, 0Fh
+    mov dx, 4240h
+    mov ah, 86h
+    int 15h
+
+    mov waitTimer, 1
+    mov ah, 1h
+    add ah, 30h
+    mov [waitTimerText], ah
+    call drawTimer
+
+    mov cx, 0Fh
+    mov dx, 4240h
+    mov ah, 86h
+    int 15h
+
+    mov waitTimer, 0
+    mov ah, 00h
+    mov [waitTimerText], ah
+    call drawTimer
+
+    neg ballVelocityX
     call moveBall
 
     ret
 resetGame endp
 
 playerOneScores proc near
+    mov playerScored, 1
     mov ah, playerOnePoints
     inc ah
 
@@ -528,6 +591,7 @@ playerOneScores proc near
 playerOneScores endp
 
 playerTwoScores proc near
+    mov playerScored, 2
     mov ah, playerTwoPoints
     inc ah
 
