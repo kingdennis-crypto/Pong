@@ -70,7 +70,9 @@ main proc far
         cmp  gameMode, 0h
         je   mainMenuGameMode
 
-        call movePaddles
+        call moveLeftPaddle
+        call moveRightPaddle
+
         call drawPaddles
 
         call drawBall
@@ -369,50 +371,94 @@ drawPaddles proc near
     ret
 drawPaddles endp
 
-movePaddles proc near
+moveLeftPaddle proc near
     cmp keyPressed, 57h ; W
-    je  movePaddleUp
+    je  leftPaddleUp
 
     cmp keyPressed, 77h ; w
-    je movePaddleUp
+    je  leftPaddleUp
 
     cmp keyPressed, 53h ; S
-    je movePaddleDown
+    je  leftPaddleDown
 
     cmp keyPressed, 73h ; s
-    je movePaddleDown
+    je  leftPaddleDown
 
-    endFunction:
-        ret
+    ret
 
-    movePaddleUp:
+    leftPaddleUp:
         mov ax, paddleLeftY
         
-        ; paddleLeftY > 0 -> Out of bounds
-        cmp ax, 0
-        jle endFunction
+        cmp ax, windowBounds
+        jle endLeftMove
 
-        mov ax, paddleMoveOffset
-
-        sub paddleLeftY, ax
-        sub paddleRightY, ax
+        mov ax, paddleLeftY
+        sub ax, paddleMoveOffset
+        mov paddleLeftY, ax
         ret
 
-    movePaddleDown:
+    leftPaddleDown:
         mov ax, paddleLeftY
         add ax, paddleHeight
         add ax, windowBounds
 
-        ; (paddleLeftY + paddleHeight + windowBounds) > windowHeight -> Out of bounds
         cmp ax, windowHeight
-        jge endFunction
+        jge endLeftMove
 
-        mov ax, paddleMoveOffset
-
-        add paddleLeftY, ax
-        add paddleRightY, ax
+        mov ax, paddleLeftY
+        add ax, paddleMoveOffset
+        mov paddleLeftY, ax
         ret
-movePaddles endp
+
+    endLeftMove:
+        ret
+moveLeftPaddle endp
+
+moveRightPaddle proc near
+    cmp gameMode, 2h
+    jl  endLeftMove
+
+    cmp keyPressed, 49h ; I
+    je  rightPaddleUp
+
+    cmp keyPressed, 69h ; i
+    je  rightPaddleUp
+
+    cmp keyPressed, 4Bh ; K
+    je  rightPaddleDown
+
+    cmp keyPressed, 6Bh ; k
+    je  rightPaddleDown
+
+    ret
+
+    rightPaddleUp:
+        mov ax, paddleRightY
+
+        cmp ax, windowBounds
+        jle endRightMove
+
+        mov ax, paddleRightY
+        sub ax, paddleMoveOffset
+        mov paddleRightY, ax
+        ret
+
+    rightPaddleDown:
+        mov ax, paddleRightY
+        add ax, paddleHeight
+        add ax, windowBounds
+
+        cmp ax, windowHeight
+        jge endRightMove
+
+        mov ax, paddleRightY
+        add ax, paddleMoveOffset
+        mov paddleRightY, ax
+        ret
+
+    endRightMove:
+        ret
+moveRightPaddle endp
 
 drawBall proc near
     mov cx, ballX       ; X
