@@ -416,8 +416,8 @@ moveLeftPaddle endp
 
 moveRightPaddle proc near
     cmp gameMode, 2h
-    jl  endLeftMove
-
+    jl  aiControlled
+    
     cmp keyPressed, 49h ; I
     je  rightPaddleUp
 
@@ -430,7 +430,26 @@ moveRightPaddle proc near
     cmp keyPressed, 6Bh ; k
     je  rightPaddleDown
 
-    ret
+    jmp endRightMove
+
+    ; The paddle is controlled by AI
+    aiControlled:
+        ; Check if the ball is above the paddle (ballY + ballSize < paddleRightY)
+        mov ax, ballY
+        add ax, ballSize
+        ; If true -> Move paddle up
+        cmp ax, paddleRightY
+        jl rightPaddleUp
+
+        ; Check if the ball is below the paddle (ballY - paddleHeight > paddleRightY)
+        mov ax, ballY
+        sub ax, paddleHeight
+        ; If true -> Move paddle down
+        cmp ax, paddleRightY
+        jg rightPaddleDown
+
+        ; If none -> Do nothing
+        jmp endRightMove
 
     rightPaddleUp:
         mov ax, paddleRightY
