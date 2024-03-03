@@ -36,6 +36,7 @@ data segment para 'data'
     playerTwoPoints    db 0    ; How many points player 2 has
 
     playerScored       db 0    ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
+    maxPointsToScore   db 0    ; The maximum amount of points to be scored in a match
 
     playerOnePointsText db '0', '$' ; Points of player one to print to the screen
     playerTwoPointsText db '0', '$' ; Points of player two to print to the screen
@@ -770,11 +771,14 @@ drawUI proc near
     cmp gameMode, 3h
     je  endDraw
 
+    ; 29 columns -> 30th is back left
+    ; 20th column is (sorta) middle
+
     ; Draw left player points
     mov ah, 02h                     ; Set cursor position
     mov bh, 00h                     ; Set page number
     mov dh, 01h                     ; Set row
-    mov dl, 06h                     ; Set column
+    mov dl, 12h                     ; Set column
     int 10h
 
     mov ah, 09h                     ; Write string to the standard output
@@ -785,7 +789,7 @@ drawUI proc near
     mov ah, 02h                     ; Set cursor position
     mov bh, 00h                     ; Set page number
     mov dh, 01h                     ; Set row
-    mov dl, 1Fh                     ; Set column
+    mov dl, 16h                     ; Set column
     int 10h
 
     mov ah, 09h                     ; Write string to the standard output
@@ -798,15 +802,15 @@ drawUI proc near
 drawUI endp
 
 drawTimer proc near
-    mov ah, 02h
-    mov bh, 00h
-    mov dh, 04h
-    mov dl, 06h
+    mov ah, 02h                     ; Set cursor position
+    mov bh, 00h                     ; Set page number
+    mov dh, 04h                     ; Set row
+    mov dl, 14h                     ; Set column
     int 10h
 
-    mov ah, 09h
-    lea dx, waitTimerText
-    int 21h
+    mov ah, 09h                     ; Write string to the standard output
+    lea dx, waitTimerText           ; Load waitTimerText into DX
+    int 21h                         ; Print the string
 
     ret
 drawTimer endp
@@ -868,8 +872,8 @@ playerOneScores proc near
     mov  ah, playerOnePoints
     inc  ah
 
-    ; If player 1 scored 5 points the game will show a game over menu
-    cmp  ah, 02h
+    ; If player 1 scored the max amount of points the game will show a game over menu
+    cmp  ah, maxPointsToScore
     je   showGameOverMenuPlayerOne
 
     mov  playerOnePoints, ah
@@ -890,8 +894,8 @@ playerTwoScores proc near
     mov  ah, playerTwoPoints
     inc  ah
 
-    ; If player 2 scored 5 points the game will show a game over menu
-    cmp  ah, 02h
+    ; If player 2 scored the max amount of points the game will show a game over menu
+    cmp  ah, maxPointsToScore
     je   showGameOverMenuPlayerTwo
 
     mov  playerTwoPoints, ah
