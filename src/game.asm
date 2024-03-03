@@ -47,8 +47,7 @@ main proc far
     pop     ax
 
     ; Initialize Graphics Mode 13 320x200 resolution with 256 colors
-    call initializeVideo
-
+    call initializeVideoMode
 
     gameLoop:
         ; Listen for keypress
@@ -57,9 +56,9 @@ main proc far
         call movePaddles
         call drawPaddles
 
-        call moveBall
         call drawBall
-        ; call checkPaddleBoundaries
+        call moveBall
+        ; call ballPaddleBoundaries
 
         call drawUI
 
@@ -396,79 +395,44 @@ moveBall proc near
     ; Check if the ball has passed the top window boundary
     mov ax, windowBounds
     cmp ballY, ax
-    jle negateMovementBallVertical
+    jle negateMovementVertical
 
     ; Check if the ball has passed the bottom window boundary
     mov ax, windowHeight
-    sub ax, ballSize
     sub ax, windowBounds
-    cmp ballY, ax
-    jge negateMovementBallVertical
-    
-    ; No collision closes subroutine
-    ret
-
-    ; Teleport the ball to the start coordinates and move to right
-    resetBallPosition:
-        mov ballX, 0A0h
-        mov ballY, 64h
-        ret
-
-    ; Negate the ball verticalically
-    negateMovementBallVertical:
-        neg ballVelocityY
-        ret
-moveBall endp
-
-checkPaddleBoundaries proc near
-    ; Check if the ball collides with the left paddle
-    mov ax, ballX
     sub ax, ballSize
-    cmp ax, paddleLeftX
-    jle checkCollisionLeftPaddle
+    cmp ballY, ax
+    jge negateMovementVertical
 
-    ; Check if the ball collides with the right paddle
-    mov ax, ballX
-    add ax, ballSize
-    cmp ax, paddleRightX
-    jge checkCollisionRightPaddle
+    ; Check if the ball has reached the left window boundary
+    mov ax, windowBounds
+    cmp ballX, ax
+    jle leftOutOfBounds
 
-    jmp noCollision
-
-    checkCollisionLeftPaddle:
-        mov ax, ballY
-        add ax, ballSize
-        cmp ax, paddleLeftY
-        jl  noCollision
-        
-        mov ax, paddleLeftY
-        add ax, paddleHeight
-        cmp ballY, ax
-        jg  noCollision
-
-        jmp negateMovement
-
-    checkCollisionRightPaddle:
-        mov ax, ballY
-        add ax, ballSize
-        cmp ax, paddleRightY
-        jl  noCollision
-
-        mov ax, paddleLeftY
-        add ax, paddleHeight
-        cmp ballY, ax
-        jg  noCollision
-
-        jmp negateMovement
-    
-    negateMovement:
-        neg ballVelocityX
-        ret
+    ; Check if the ball has reached the right window boundary
+    mov ax, windowWidth
+    sub ax, windowBounds
+    sub ax, ballSize
+    cmp ballX, ax
+    jge rightOutOfBounds
 
     noCollision:
         ret
 
-checkPaddleBoundaries endp
+    leftOutOfBounds:
+        call resetGame
+        call playerTwoScores
+        ret
+
+    rightOutOfBounds:
+        call resetGame
+        call playerOneScores
+        ret
+
+    negateMovementVertical:
+        neg ballVelocityY
+        ret
+moveBall endp
 
 drawUI proc near
     ; Draw left player points
@@ -496,28 +460,44 @@ drawUI proc near
     ret
 drawUI endp
 
-playerOneScores proc near
-    xor ax, ax
-    mov al, playerOnePoints
+resetGame proc near
+    mov paddleLeftY, 40h
+    mov paddleRightY, 40h
 
-    add al, 30h
-    mov [playerOnePointsText], al
+    mov ballX, 0A0h
+    mov ballY, 64h
+
+    call initializeVideoMode
+    ; call playerOneScores
+    call moveBall
+
+    ret
+resetGame endp
+
+playerOneScores proc near
+    mov ah, playerOnePoints
+    inc ah
+
+    mov playerOnePoints, ah
+    add ah, 30h                     ; Adds 30 hex to get to  decimals in ASCII table
+    mov [playerOnePointsText], ah
 
     ret
 playerOneScores endp
 
 playerTwoScores proc near
-    xor ax, ax
-    mov al, playerTwoPoints
+    mov ah, playerTwoPoints
+    inc ah
 
-    add al, 30h
-    mov [playerTwoPointsText], al
+    mov playerTwoPoints, ah
+    add ah, 30h                     ; Add 30 hext to get to decimals in ASCII table
+    mov [playerTwoPointsText], ah
 
     ret
 playerTwoScores endp
 
 ; Clear the screen by restarting the video mode
-initializeVideo proc near
+initializeVideoMode proc near
     mov ah, 00h         ; Set the configuration to video mode
     mov al, 13h         ; Select the video mode
     int 10h             ; Execute
@@ -528,19 +508,7 @@ initializeVideo proc near
     int 10h             ; Execute
 
     ret
-initializeVideo endp
-
-; Set all pixels on the screen to black
-clearScreen proc near
-    mov al, 00h     ; Set black as color
-    mov ah, al      ; Duplicate the color value
-    mov bx, 00h
-    mov ex, bx      ; Set ES to start of the VGA
-    mov cx, 32000   ; Set CX to the number of words
-    mov di, 0       ; Set DI to pixel offset 0
-
-    rep stosw
-clearScreen endp
+initializeVideoMode endp
 
 ; Go back to text mode
 exitGame proc near
