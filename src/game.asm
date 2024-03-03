@@ -50,6 +50,9 @@ data segment para 'data'
     menuGameModeTwo    db '[2] - Multiplayer', '$'
     menuGameModeExit   db '[E] - Exit the game', '$' 
 
+    menuPlayerOneCtlr  db 'Player 1: UP: W - DOWN: O', '$'
+    menuPlayerTwoCtlr  db 'Player 2: UP: S - DOWN: L', '$'
+
     gameOverTitle      db 'GAME OVER! GG', '$'
     gameOverWinner     db 'Player 0 won', '$'
     gameOverPlayAgain  db 'Press M to go to the main menu', '$'
@@ -78,6 +81,8 @@ main proc far
         cmp  gameMode, 0h
         je   mainMenuGameMode
 
+        ; FIXME: When losing a game and then via menu trying to restart the game
+        ;   will open in game over mode
         cmp  gameMode, 3h
         je   gameOverMenuMode
 
@@ -171,6 +176,9 @@ listenForKeyPress endp
 
 ; Draw the main menu
 drawMainMenu proc near
+    ; TODO: Refactor these lines to a separate subroutine with
+    ;   row, column, and text pointer as arguments
+
     ; Draw the main title
     mov ah, 02h                 ; Set cursor position
     mov bh, 00h                 ; Set page number
@@ -215,7 +223,7 @@ drawMainMenu proc near
     lea dx, menuGameModeTwo     ; Load mainMenuSubtitle as string to display
     int 21h                     ; Execute
 
-    ; Draw the first game mode
+    ; Draw the exit game mode
     mov ah, 02h                 ; Set cursor position
     mov bh, 00h                 ; Set page number
     mov dh, 0Ch                 ; Set row
@@ -224,6 +232,28 @@ drawMainMenu proc near
 
     mov ah, 09h                 ; Set to wrote string to the standard output
     lea dx, menuGameModeExit    ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ; Draw the Player One controls text
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 14h                 ; Set row
+    mov dl, 03h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, menuPlayerOneCtlr   ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ; Draw the player two controls text
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 16h                 ; Set row
+    mov dl, 03h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, menuPlayerTwoCtlr   ; Load mainMenuSubtitle as string to display
     int 21h                     ; Execute
 
     ret
