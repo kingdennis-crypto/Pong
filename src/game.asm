@@ -7,6 +7,8 @@ data segment para 'data'
     windowHeight       dw 0C8h ; The height of the window (200 pixels)
     windowBounds       dw 04h  ; Variable used to check for collision early
 
+    gameMode           db 0h   ; 0: Game Menu, 1: Singleplayer, 2: Multiplayer
+
     paddleLeftX        dw 0Ah  ; Current x position of the left paddle
     paddleLeftY        dw 40h  ; Current y position of the left paddle  
 
@@ -37,6 +39,13 @@ data segment para 'data'
 
     waitTimer          db 3
     waitTimerText      db '3', '$'
+
+    ; UI-text
+    mainMenuTitle      db 'PONG', '$'
+    mainMenuSubtitle   db 'You will hate yourself :)', '$'
+    menuGameModeOne    db '[1] - Singleplayer', '$'
+    menuGameModeTwo    db '[2] - Multiplayer', '$'
+    menuGameModeExit   db '[E] - Exit the game', '$' 
 data ends
 
 code segment para 'code'
@@ -58,16 +67,22 @@ main proc far
         ; Listen for keypress
         call listenForKeyPress
 
+        cmp  gameMode, 0h
+        je   mainMenuGameMode
+
         call movePaddles
         call drawPaddles
 
         call drawBall
         call moveBall
-        ; call ballPaddleBoundaries
 
         call drawUI
 
         jmp gameLoop
+
+        mainMenuGameMode:
+            call drawMainMenu
+            jmp  gameLoop
 main endp
 
 listenForKeyPress proc near
@@ -82,28 +97,105 @@ listenForKeyPress proc near
     mov ah, 00h
     int 16h
 
-    ; If key is 'E' end game
+    ; If key is '1' set singleplayer
+    cmp al, 31h
+    je setSinglePlayer
+
+    ; If key is '2' set multiplayer
+    cmp al, 32h
+    je setMultiPlayer
+
+    ; If key is 'E' exit the game
     cmp al, 45h
     je startExitProcedure
 
-    ; If key is 'e' end game
+    ; If key is 'e' exit the game
     cmp al, 65h
     je startExitProcedure
 
     mov keyPressed, al
     jmp endListen
 
+    setSinglePlayer:
+        mov  gameMode, 1h
+        call initializeVideoMode
+        jmp  endListen
+
+    setMultiPlayer:
+        mov  gameMode, 2h
+        call initializeVideoMode
+        jmp  endListen
+
     noKeyPressed:
-        mov keyPressed, 00h
-        jmp endListen
+        mov  keyPressed, 00h
+        jmp  endListen
 
     startExitProcedure:
-        call exitGame
-        ret
+        call  exitGame
     
     endListen:
         ret
 listenForKeyPress endp
+
+; Draw the main menu
+drawMainMenu proc near
+    ; Draw the main title
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 03h                 ; Set row
+    mov dl, 03h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to write string to standard output
+    lea dx, mainMenuTitle       ; Load mainMenuTitle as string
+    int 21h                     ; Execute
+
+    ; Draw the subtitle
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 04h                 ; Set row
+    mov dl, 03h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, mainMenuSubtitle   ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ; Draw the first game mode
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 08h                 ; Set row
+    mov dl, 05h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, menuGameModeOne     ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ; Draw the second game mode
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 0Ah                 ; Set row
+    mov dl, 05h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, menuGameModeTwo     ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ; Draw the first game mode
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 0Ch                 ; Set row
+    mov dl, 05h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Set to wrote string to the standard output
+    lea dx, menuGameModeExit    ; Load mainMenuSubtitle as string to display
+    int 21h                     ; Execute
+
+    ret
+drawMainMenu endp
 
 ; Draw the left and right paddles
 drawPaddles proc near
