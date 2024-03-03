@@ -28,7 +28,9 @@ data segment para 'data'
     ballBorderWidth    dw 04h
 
     playerOnePoints    db 0
-    playerTwoPoints    db 1
+    playerTwoPoints    db 0
+
+    playerScored       db 0
 
     playerOnePointsText db '0', '$'
     playerTwoPointsText db '0', '$'
@@ -416,8 +418,7 @@ moveBall proc near
     cmp ballX, ax
     jge rightOutOfBounds
 
-    noCollision:
-        ret
+    jmp checkPaddleCollisions
 
     leftOutOfBounds:
         call resetGame
@@ -431,7 +432,47 @@ moveBall proc near
 
     negateMovementVertical:
         neg ballVelocityY
+
+    checkPaddleCollisions:
+        ; Check left paddle collision
+        mov ax, paddleLeftX
+        add ax, paddleWidth
+        cmp ax, ballX           ; LeftPaddleX < ballX
+        jl  noCollision
+
+        ; Check right paddle collision
+        mov ax, paddleRightX
+        sub ax, ballSize
+        cmp ax, ballX           ; RightPaddleX > ballX
+        jg  noCollision
+
+        neg ballVelocityX
+
+    checkLeftPaddleCollision:
         ret
+
+    checkRightPaddleCollision:
+        ret
+
+    ; Check if the ball on the Y axis is in the boundaries of the paddle
+    ; If no, do nothing
+    ; If yes, check at which X coordinates the ball is, if colliding with paddle
+    ; Negate the movement
+
+    ; Check if between the both paddles
+    ; YES -> NO COLLISION
+    ; NO -> CHECK FOR COLLISIONS
+
+    ; 20 <-> 100
+
+    ; negateMovementHorizontal:
+    ;     neg ballVelocityX
+
+    noCollision:
+        ret
+
+    
+    
 moveBall endp
 
 drawUI proc near
@@ -468,7 +509,8 @@ resetGame proc near
     mov ballY, 64h
 
     call initializeVideoMode
-    ; call playerOneScores
+
+    ; TODO: Add a delay with a timer for the user to know when it stops
     call moveBall
 
     ret
