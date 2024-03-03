@@ -35,8 +35,8 @@ data segment para 'data'
     playerOnePoints    db 0    ; How many points player 1 has
     playerTwoPoints    db 0    ; How many points player 2 has
 
-    playerScored       db 0    ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
-    maxPointsToScore   db 0    ; The maximum amount of points to be scored in a match
+    playerScored       db 0h   ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
+    maxPointsToScore   db 5h   ; The maximum amount of points to be scored in a match
 
     playerOnePointsText db '0', '$' ; Points of player one to print to the screen
     playerTwoPointsText db '0', '$' ; Points of player two to print to the screen
