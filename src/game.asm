@@ -632,35 +632,23 @@ moveBall proc near
     mov ax, ballVelocityX
     add ballX, ax
 
-    ; Move ball vertical
-    mov ax, ballVelocityY
-    add ballY, ax
+    ; ; Move ball vertical
+    ; mov ax, ballVelocityY
+    ; add ballY, ax
 
-    ; Check if the ball has passed the top window boundary
-    mov ax, windowBounds
-    cmp ballY, ax
-    jle negateMovementVertical
-
-    ; Check if the ball has passed the bottom window boundary
-    mov ax, windowHeight
-    sub ax, windowBounds
-    sub ax, ballSize
-    cmp ballY, ax
-    jge negateMovementVertical
-
-    ; Check if the ball has reached the left window boundary
+    ; Check if the ball has passed the left window boundary
     mov ax, windowBounds
     cmp ballX, ax
-    jle leftOutOfBounds
+    jl  leftOutOfBounds
 
-    ; Check if the ball has reached the right window boundary
+    ; Check if the ball has passed the right window boundary
     mov ax, windowWidth
-    sub ax, windowBounds
     sub ax, ballSize
+    sub ax, windowBounds
     cmp ballX, ax
-    jge rightOutOfBounds
+    jg rightOutOfBounds
 
-    jmp checkPaddleCollisions
+    jmp moveBallVertical
 
     leftOutOfBounds:
         call playerTwoScores
@@ -670,49 +658,79 @@ moveBall proc near
         call playerOneScores
         ret
 
-    negateMovementVertical:
-        neg ballVelocityY
+    moveBallVertical:
+        mov ax, ballVelocityY
+        add ballY, ax
 
-    checkPaddleCollisions:
-        ; Check left paddle collision
+    ; Check if the ball has passed the top window boundary
+    mov ax, windowBounds
+    cmp ballY, ax
+    jl  negateMovementVertical
+
+    ; Check if the ball has passed the bottom boundary
+    mov ax, windowHeight
+    sub ax, ballSize
+    sub ax, windowBounds
+    cmp ballY, ax
+    jg  negateMovementVertical
+
+    ; Check if the ball is colliding with the right paddle
+    mov ax, ballX
+    add ax, ballSize
+    cmp ax, paddleRightX
+    jng checkLeftPaddleCollision
+
+    mov ax, paddleRightX
+    add ax, paddleWidth
+    cmp ballX, ax
+    jnl checkLeftPaddleCollision
+
+    mov ax, ballY
+    add ax, ballSize
+    cmp ax, paddleRightY
+    jng checkLeftPaddleCollision
+
+    mov ax, paddleRightY
+    add ax, paddleHeight
+    cmp ballY, ax
+    jnl checkLeftPaddleCollision
+
+    jmp negateMovementHorizontal
+
+    ; Check if the ball is colliding with the left paddle
+    checkLeftPaddleCollision:
+        mov ax, ballX
+        add ax, ballSize
+        cmp ax, paddleLeftX
+        jng noCollision
+
         mov ax, paddleLeftX
         add ax, paddleWidth
-        cmp ax, ballX           ; LeftPaddleX < ballX
-        jl  noCollision
+        cmp ballX, ax
+        jnl noCollision
 
-        ; Check right paddle collision
-        mov ax, paddleRightX
-        sub ax, ballSize
-        cmp ax, ballX           ; RightPaddleX > ballX
-        jg  noCollision
+        mov ax, ballY
+        add ax, ballSize
+        cmp ax, paddleLeftY
+        jng noCollision
 
+        mov ax, paddleLeftY
+        add ax, paddleHeight
+        cmp ballY, ax
+        jnl noCollision
+
+        ; If it reached this point it means that the ball collides with the left paddle
+        jmp negateMovementHorizontal
+
+    negateMovementVertical:
+        neg ballVelocityY
+        ret
+    negateMovementHorizontal:
         neg ballVelocityX
-
-    checkLeftPaddleCollision:
         ret
-
-    checkRightPaddleCollision:
-        ret
-
-    ; Check if the ball on the Y axis is in the boundaries of the paddle
-    ; If no, do nothing
-    ; If yes, check at which X coordinates the ball is, if colliding with paddle
-    ; Negate the movement
-
-    ; Check if between the both paddles
-    ; YES -> NO COLLISION
-    ; NO -> CHECK FOR COLLISIONS
-
-    ; 20 <-> 100
-
-    ; negateMovementHorizontal:
-    ;     neg ballVelocityX
 
     noCollision:
         ret
-
-    
-    
 moveBall endp
 
 drawUI proc near
@@ -744,6 +762,7 @@ drawUI proc near
     lea dx, playerTwoPointsText     ; Load playerOnePoints into DX
     int 21h                         ; Print the string
 
+    ; TODO: Add dashed center line
     endDraw:
         ret
 drawUI endp
@@ -820,7 +839,7 @@ playerOneScores proc near
     inc  ah
 
     ; If player 1 scored 5 points the game will show a game over menu
-    cmp  ah, 05h
+    cmp  ah, 02h
     je   showGameOverMenuPlayerOne
 
     mov  playerOnePoints, ah
@@ -842,7 +861,7 @@ playerTwoScores proc near
     inc  ah
 
     ; If player 2 scored 5 points the game will show a game over menu
-    cmp  ah, 05h
+    cmp  ah, 02h
     je   showGameOverMenuPlayerTwo
 
     mov  playerTwoPoints, ah
