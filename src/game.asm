@@ -7,7 +7,11 @@ data segment para 'data'
     windowHeight       dw 0C8h ; The height of the window (200 pixels)
     windowBounds       dw 04h  ; Variable used to check for collision early
 
-    gameMode           db 0h   ; 0: Game Menu, 1: Singleplayer, 2: Multiplayer
+    gameMode           db 0h   ; Current in game game mode:
+                               ; - 0: Game Menu, 
+                               ; - 1: Singleplayer, 
+                               ; - 2: Multiplayer,
+                               ; - 3: Game Over
 
     paddleLeftX        dw 0Ah  ; Current x position of the left paddle
     paddleLeftY        dw 40h  ; Current y position of the left paddle  
@@ -45,6 +49,11 @@ data segment para 'data'
     menuGameModeOne    db '[1] - Singleplayer', '$'
     menuGameModeTwo    db '[2] - Multiplayer', '$'
     menuGameModeExit   db '[E] - Exit the game', '$' 
+
+    gameOverTitle      db 'GAME OVER! GG', '$'
+    gameOverWinner     db 'Player 0 won', '$'
+    gameOverPlayAgain  db 'Press M to go to the main menu', '$'
+    gameOverExit       db 'Press E to exit the game', '$'
 data ends
 
 code segment para 'code'
@@ -69,6 +78,9 @@ main proc far
         cmp  gameMode, 0h
         je   mainMenuGameMode
 
+        cmp  gameMode, 3h
+        je   gameOverMenuMode
+
         call moveLeftPaddle
         call moveRightPaddle
 
@@ -80,6 +92,10 @@ main proc far
         call drawUI
 
         jmp gameLoop
+
+        gameOverMenuMode:
+            call drawGameOverMenu
+            jmp  gameLoop
 
         mainMenuGameMode:
             call drawMainMenu
@@ -100,30 +116,45 @@ listenForKeyPress proc near
 
     ; If key is '1' set singleplayer
     cmp al, 31h
-    je setSinglePlayer
+    je  setSinglePlayer
 
     ; If key is '2' set multiplayer
     cmp al, 32h
-    je setMultiPlayer
+    je  setMultiPlayer
 
     ; If key is 'E' exit the game
     cmp al, 45h
-    je startExitProcedure
+    je  startExitProcedure
 
     ; If key is 'e' exit the game
     cmp al, 65h
-    je startExitProcedure
+    je  startExitProcedure
+
+    ; If key is 'M' go to the main menu
+    cmp al, 4Dh
+    je  setToMainMenu
+
+    ; If key is 'm' go to the main menu
+    cmp al, 6Dh
+    je  setToMainMenu
 
     mov keyPressed, al
     jmp endListen
 
+    setToMainMenu:
+        mov  gameMode, 0h
+        call initializeVideoMode
+        jmp  endListen
+
     setSinglePlayer:
         mov  gameMode, 1h
+        mov  playerScored, 0h
         call initializeVideoMode
         jmp  endListen
 
     setMultiPlayer:
         mov  gameMode, 2h
+        mov  playerScored, 0h
         call initializeVideoMode
         jmp  endListen
 
@@ -197,6 +228,58 @@ drawMainMenu proc near
 
     ret
 drawMainMenu endp
+
+drawGameOverMenu proc near
+    ; Write the game over menu title
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 04h                 ; Set row
+    mov dl, 04h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Write string to the standard output
+    lea dx, gameOverTitle       ; Load string into standard output
+    int 21h                     ; Execute
+
+    mov al, playerScored        ; Retrieves who scored last
+    add al, 30h                 ; Change number to ASCII
+    mov [gameOverWinner+7], al  ; Update the winner text with the correct winner
+
+    ; Show who won
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 06h                 ; Set row
+    mov dl, 04h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Write string to the standard output
+    lea dx, gameOverWinner      ; Load string into standard output
+    int 21h                     ; Execute
+
+    ; Show replay message
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 0Ah                 ; Set row
+    mov dl, 04h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Write string to the standard output
+    lea dx, gameOverPlayAgain   ; Load string into standard output
+    int 21h                     ; Execute
+
+    ; Show exit game message
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    mov dh, 0Ch                 ; Set row
+    mov dl, 04h                 ; Set column
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Write string to the standard output
+    lea dx, gameOverExit        ; Load string into standard output
+    int 21h                     ; Execute
+
+    ret
+drawGameOverMenu endp
 
 ; Draw the left and right paddles
 drawPaddles proc near
@@ -417,16 +500,16 @@ moveRightPaddle proc near
     cmp gameMode, 2h
     jl  aiControlled
     
-    cmp keyPressed, 49h ; I
+    cmp keyPressed, 4Fh ; O
     je  rightPaddleUp
 
-    cmp keyPressed, 69h ; i
+    cmp keyPressed, 6Fh ; o
     je  rightPaddleUp
 
-    cmp keyPressed, 4Bh ; K
+    cmp keyPressed, 4Ch ; L
     je  rightPaddleDown
 
-    cmp keyPressed, 6Bh ; k
+    cmp keyPressed, 6Ch ; l
     je  rightPaddleDown
 
     jmp endRightMove
@@ -581,12 +664,10 @@ moveBall proc near
 
     leftOutOfBounds:
         call playerTwoScores
-        call resetGame
         ret
 
     rightOutOfBounds:
         call playerOneScores
-        call resetGame
         ret
 
     negateMovementVertical:
@@ -635,6 +716,12 @@ moveBall proc near
 moveBall endp
 
 drawUI proc near
+    cmp gameMode, 0h
+    je endDraw
+
+    cmp gameMode, 3h
+    je  endDraw
+
     ; Draw left player points
     mov ah, 02h                     ; Set cursor position
     mov bh, 00h                     ; Set page number
@@ -657,7 +744,8 @@ drawUI proc near
     lea dx, playerTwoPointsText     ; Load playerOnePoints into DX
     int 21h                         ; Print the string
 
-    ret
+    endDraw:
+        ret
 drawUI endp
 
 drawTimer proc near
@@ -675,16 +763,8 @@ drawTimer proc near
 drawTimer endp
 
 resetGame proc near
-    mov paddleLeftY, 40h
-    mov paddleRightY, 40h
-
-    mov ballX, 0A0h
-    mov ballY, 64h
-
     call initializeVideoMode
-    call drawPaddles
-    call drawBall
-    call drawUI
+    call initializeGame
 
     ; TODO: Add a delay with a timer for the user to know when it stops
     ; Add a delay of 1 second
@@ -735,27 +815,48 @@ resetGame proc near
 resetGame endp
 
 playerOneScores proc near
-    mov playerScored, 1
-    mov ah, playerOnePoints
-    inc ah
+    mov  playerScored, 1
+    mov  ah, playerOnePoints
+    inc  ah
 
-    mov playerOnePoints, ah
-    add ah, 30h                     ; Adds 30 hex to get to  decimals in ASCII table
-    mov [playerOnePointsText], ah
+    ; If player 1 scored 5 points the game will show a game over menu
+    cmp  ah, 05h
+    je   showGameOverMenuPlayerOne
+
+    mov  playerOnePoints, ah
+    add  ah, 30h                     ; Adds 30 hex to get to  decimals in ASCII table
+    mov  [playerOnePointsText], ah
+    call resetGame
 
     ret
+
+    showGameOverMenuPlayerOne:
+        mov  gameMode, 3h
+        call initializeVideoMode
+        ret
 playerOneScores endp
 
 playerTwoScores proc near
-    mov playerScored, 2
-    mov ah, playerTwoPoints
-    inc ah
+    mov  playerScored, 2
+    mov  ah, playerTwoPoints
+    inc  ah
 
-    mov playerTwoPoints, ah
-    add ah, 30h                     ; Add 30 hext to get to decimals in ASCII table
-    mov [playerTwoPointsText], ah
+    ; If player 2 scored 5 points the game will show a game over menu
+    cmp  ah, 05h
+    je   showGameOverMenuPlayerTwo
+
+    mov  playerTwoPoints, ah
+    add  ah, 30h                     ; Add 30 hext to get to decimals in ASCII table
+    mov  [playerTwoPointsText], ah
+    call resetGame
 
     ret
+
+    showGameOverMenuPlayerTwo:
+        mov  gameMode, 3h
+        call initializeVideoMode
+        ret
+
 playerTwoScores endp
 
 ; Clear the screen by restarting the video mode
@@ -771,6 +872,20 @@ initializeVideoMode proc near
 
     ret
 initializeVideoMode endp
+
+initializeGame proc near
+    mov paddleLeftY, 40h
+    mov paddleRightY, 40h
+
+    mov ballX, 0A0h
+    mov ballY, 64h
+
+    call drawPaddles
+    call drawBall
+    call drawUI
+
+    ret
+initializeGame endp
 
 ; Go back to text mode
 exitGame proc near
