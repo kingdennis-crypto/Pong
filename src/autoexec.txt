@@ -1,6 +1,0 @@
-[autoexec]
-mount c ~/Developer/DosBox
-c:
-masm src;
-link src;
-src
