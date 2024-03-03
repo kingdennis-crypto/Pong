@@ -1,110 +1,61 @@
-# Space Blaster
+# Pong
 
-You control a spaceship in a 2D space environment and it is your goal to shoot
-down enemy spaceships while avoiding obstacles.
+Welcome to my version of the classic Pong game implemented in Assembly 8086. This game will provide a nostalgic experience of the iconic pong game (when there aren't any major bugs). This game can be played single and as a duo.
 
 ## Features
 
-1. Real-Time Movement
-1. Physics-Based Shooting
-1. Enemy Spaceships
-1. Score System
-1. Graphics
+1. Singleplayer and multiplayer game modes
+1. Paddle controls
+1. Ball movement
+1. Score tracking for each player
+1. Game Over screen with winner announcement
 
-## Pseudocode
+## Controls
 
+- Player 1 (left paddle):
+    - Move up: `W` or `w`
+    - Move down: `S` or `s`
+- Player 2 (right paddle):
+    - Move up: `O` or `o`
+    - Move down: `L` or `l`
+- General:
+    - Exit game: `E` or `e`
+    - Main menu: `M` or `m`
+
+## Requirements
+
+- DOSBox (DOS emulator)
+
+## Installation
+
+1. Install DOSBox on your system.
+2. Download this git repository to your local machine.
+3. Open DOSBox and mount the directory containing the game files.
 ```
-; Space Blaster - DOSBox Assembly Pseudocode
+mount C path/to/game/folder
+```
+Replace `path/to/game/folder` with the actual path to the game files.
 
-; Initialize Game
-;    Initialize Graphics Mode 13h ; 320x200 resolution with 256 colors
+4. Change to the mounted directory.
+```
+C:
+```
 
-InitializeGame:
-    loadSprites()               ; Load spaceship, enemy, and obstacle sprites
-    initializePlayer()          ; Set up player spaceship
-    initializeEnemies()         ; Set up enemy spaceships
-    initializeObstacles()       ; Set up obstacles
-    initializeScore()           ; Set initial score to 0
+## How to run
 
-; Game Loop (while loop)
-GameLoop:
-    ; Input
-    checkInput()                ; Check keyboard input for movement and shooting
-
-    ; Update
-    MovePlayer()                ; Update player's position based on input
-    MoveEnemies()               ; Update enemy positions with basic AI (Random movement)
-    MoveObstacles()             ; Update obstacle positions
-
-    ; Collision detection
-    CheckCollisions()           ; Check for collisions between entities
-
-    ; Draw
-    DrawBackground()            ; Draw space background
-    DrawPlayer()                ; Draw player spaceship
-    DrawEnemies()               ; Draw enemy spaceships
-    DrawObstacles()             ; Draw obstacles
-    DrawScore()                 ; Display current score
-
-    ; Game Over Check
-    CheckGameOver()             ; Check if player has lost all lives
-
-    ; Delay for smooth gameplay
-    Delay(16)                   ; Aim for approximately 60 frames per second
-
-    ; Loop back to GameLoop
-    JMP GameLoop
-
-; Subroutines
-LoadSprites:
-    ; Use BIOS or DOS interrupts for file loading
-
-InitializePlayer:
-    ; Set initial position, speed, and sprite for the player
-
-InitializeEnemies:
-    ; Set initial positions, speeds, and sprites for enemy spaceships
-
-InitializeObstacles:
-    ; Set initial positions, speeds, and sprites for obstacles
-
-InitializeScore:
-    ; Set initial score to 0
-
-CheckInput:
-    ; Check keyboard input for arrow keys and spacebar
-
-MovePlayer:
-    ; Update player's position based on keyboard input
-    ; Apply physics for smooth movement
-
-MoveEnemies:
-    ; Update enemy positions with simple AI
-    ; Move towards the player or move randomly
-
-CheckCollisions:
-    ; Check for collisions between player, enemies, and obstacles
-    ; Update score, lives, or other game variables accordingly
-
-DrawBackground:
-    ; Draw a space background using color palette
-
-DrawPlayer:
-    ; Draw the player's spaceship on the screen
-
-DrawEnemies:
-    ; Draw enemy spaceships on the screen
-
-DrawObstacles:
-    ; Draw obstacles on the screen
-
-DrawScore:
-    ; Display the current score on the screen
-
-CheckGameOver:
-    ; Display game over screen or reset game if necessary
-
-Delay:
-    ; Implement a delay to control the game's frame rate
-    ; Use BIOS or DOS interrupts for delay
+1. Inside DOSBox, navigate to the game directory.
+```
+cd src
+```
+2. Compile the assembly file
+```
+masm.exe /a game.asm
+```
+3. Link the object file
+```
+link game.obj
+```
+4. Run the game
+```
+game.exe
 ```
