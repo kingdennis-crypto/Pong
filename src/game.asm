@@ -19,25 +19,25 @@ data segment para 'data'
     paddleHeight       dw 25h  ; Default paddle height
     paddleVelocity     dw 10h  ; Default paddle velocity
 
-    keyPressed         db 00h
+    keyPressed         db 00h  ; Current pressed key  
 
-    ballX              dw 0A0h
-    ballY              dw 64h
-    ballSize           dw 06h
-    ballVelocityX      dw 01h
-    ballVelocityY      dw 01h
-    ballBorderWidth    dw 04h
+    ballX              dw 0A0h ; Where the ball is located on a X-axis
+    ballY              dw 64h  ; Where the ball is located on a Y-axis
+    ballSize           dw 06h  ; The size of the ball X and Y
+    ballVelocityX      dw 01h  ; How fast the ball moves sideways
+    ballVelocityY      dw 01h  ; How fast the ball moves up and down
+    ballBorderWidth    dw 04h  ; The buffer around the ball to be drawn black
 
-    playerOnePoints    db 0
-    playerTwoPoints    db 0
+    playerOnePoints    db 0    ; How many points player 1 has
+    playerTwoPoints    db 0    ; How many points player 2 has
 
-    playerScored       db 0
+    playerScored       db 0    ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
 
-    playerOnePointsText db '0', '$'
-    playerTwoPointsText db '0', '$'
+    playerOnePointsText db '0', '$' ; Points of player one to print to the screen
+    playerTwoPointsText db '0', '$' ; Points of player two to print to the screen
 
-    waitTimer          db 3
-    waitTimerText      db '3', '$'
+    waitTimer          db 3         ; The timer for when the game resets or stars
+    waitTimerText      db '3', '$'  ; The timer text that should be displayed
 
     ; UI-text
     mainMenuTitle      db 'PONG', '$'
@@ -564,8 +564,6 @@ moveBall proc near
     sub ax, ballSize
     cmp ballY, ax
     jge negateMovementVertical
-
-    ret
 
     ; Check if the ball has reached the left window boundary
     mov ax, windowBounds
