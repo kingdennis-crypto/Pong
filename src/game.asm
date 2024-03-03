@@ -15,10 +15,9 @@ data segment para 'data'
     paddleRightX       dw 130h ; Current x position of the right paddle
     paddleRightY       dw 40h  ; Current y position of the right paddle
 
-    paddleWidth        dw 06h  ; Default paddle width
-    paddleHeight       dw 35h  ; Default paddle height
-    paddleVelocity     dw 0Fh  ; Default paddle velocity
-    paddleMoveOffset   dw 10h  ; Offset of paddle movement
+    paddleWidth        dw 04h  ; Default paddle width
+    paddleHeight       dw 25h  ; Default paddle height
+    paddleVelocity     dw 10h  ; Default paddle velocity
 
     keyPressed         db 00h
 
@@ -207,7 +206,7 @@ drawPaddles proc near
 
     ; Initialize coordinates (X,Y)
     mov dx, paddleLeftY
-    sub dx, paddleMoveOffset    ; Y - offset
+    sub dx, paddleVelocity    ; Y - offset
 
     mov cx, paddleLeftX
     jmp abovePaddleBlackCol
@@ -281,7 +280,7 @@ drawPaddles proc near
         
         mov ax, paddleLeftY
         add ax, paddleHeight
-        add ax, paddleMoveOffset
+        add ax, paddleVelocity
 
         cmp dx, ax
         jle underLefPaddleBlackRow
@@ -289,7 +288,7 @@ drawPaddles proc near
     ; mov cx, paddleRightX            ; X
     ; mov dx, paddleRightY            ; Y
     mov dx, paddleRightY            ; Y
-    sub dx, paddleMoveOffset        ; Y - offset
+    sub dx, paddleVelocity        ; Y - offset
 
     mov cx, paddleRightX
     jmp aboveRightPaddleBlackCol
@@ -363,7 +362,7 @@ drawPaddles proc near
         
         mov ax, paddleRightY
         add ax, paddleHeight
-        add ax, paddleMoveOffset
+        add ax, paddleVelocity
 
         cmp dx, ax
         jle underRightPaddleBlackRow
@@ -393,7 +392,7 @@ moveLeftPaddle proc near
         jle endLeftMove
 
         mov ax, paddleLeftY
-        sub ax, paddleMoveOffset
+        sub ax, paddleVelocity
         mov paddleLeftY, ax
         ret
 
@@ -406,7 +405,7 @@ moveLeftPaddle proc near
         jge endLeftMove
 
         mov ax, paddleLeftY
-        add ax, paddleMoveOffset
+        add ax, paddleVelocity
         mov paddleLeftY, ax
         ret
 
@@ -458,7 +457,7 @@ moveRightPaddle proc near
         jle endRightMove
 
         mov ax, paddleRightY
-        sub ax, paddleMoveOffset
+        sub ax, paddleVelocity
         mov paddleRightY, ax
         ret
 
@@ -471,7 +470,7 @@ moveRightPaddle proc near
         jge endRightMove
 
         mov ax, paddleRightY
-        add ax, paddleMoveOffset
+        add ax, paddleVelocity
         mov paddleRightY, ax
         ret
 
@@ -565,6 +564,8 @@ moveBall proc near
     sub ax, ballSize
     cmp ballY, ax
     jge negateMovementVertical
+
+    ret
 
     ; Check if the ball has reached the left window boundary
     mov ax, windowBounds
