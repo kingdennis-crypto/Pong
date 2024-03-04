@@ -5,9 +5,9 @@ stack ends
 data segment para 'data'
     windowWidth        dw 140h ; The width of the window (320 pixels)
     windowHeight       dw 0C8h ; The height of the window (200 pixels)
-    windowBounds       dw 04h  ; Variable used to check for collision early
+    windowBounds       dw 04h  ; 4 pixels around the window to check for collision early
 
-    gameMode           db 0h   ; Current in game game mode:
+    gameMode           db 0h   ; Current game mode:
                                ; - 0: Game Menu, 
                                ; - 1: Singleplayer, 
                                ; - 2: Multiplayer,
@@ -177,90 +177,53 @@ listenForKeyPress endp
 
 ; Draw the main menu
 drawMainMenu proc near
-    ; TODO: Refactor these lines to a separate subroutine with
-    ;   row, column, and text pointer as arguments
-
     ; Set player scores back to 0
     mov ah, 0
     mov playerOnePoints, ah
     mov playerTwoPoints, ah
+    mov playerScored, ah
 
     ; Draw the main title
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 03h                 ; Set row
-    mov dl, 03h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to write string to standard output
-    lea dx, mainMenuTitle       ; Load mainMenuTitle as string
-    int 21h                     ; Execute
+    mov  dh, 03h                    ; Set row
+    mov  dl, 03h                    ; Set column
+    lea  bp, mainMenuTitle          ; Load mainMenuTitle
+    call drawText                   
 
     ; Draw the subtitle
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 04h                 ; Set row
-    mov dl, 03h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, mainMenuSubtitle   ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 05h                     ; Set row
+    mov dl, 03h                     ; Set colimn
+    lea bp, mainMenuSubtitle        ; Load mainMenuSubtitle
+    call drawText
 
     ; Draw the first game mode
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 08h                 ; Set row
-    mov dl, 05h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, menuGameModeOne     ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 08h
+    mov dl, 05h
+    lea bp, menuGameModeOne
+    call drawText
 
     ; Draw the second game mode
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 0Ah                 ; Set row
-    mov dl, 05h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, menuGameModeTwo     ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 0Ah
+    mov dl, 05h
+    lea bp, menuGameModeTwo
+    call drawText
 
     ; Draw the exit game mode
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 0Ch                 ; Set row
-    mov dl, 05h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, menuGameModeExit    ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 0Ch
+    mov dl, 05h
+    lea bp, menuGameModeExit
+    call drawText
 
     ; Draw the Player One controls text
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 14h                 ; Set row
-    mov dl, 03h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, menuPlayerOneCtlr   ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 14h
+    mov dl, 03h
+    lea bp, menuPlayerOneCtlr
+    call drawText
 
     ; Draw the player two controls text
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 16h                 ; Set row
-    mov dl, 03h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Set to wrote string to the standard output
-    lea dx, menuPlayerTwoCtlr   ; Load mainMenuSubtitle as string to display
-    int 21h                     ; Execute
+    mov dh, 16h
+    mov dl, 03h
+    lea bp, menuPlayerTwoCtlr
+    call drawText
 
     ret
 drawMainMenu endp
@@ -272,52 +235,32 @@ drawGameOverMenu proc near
     mov playerTwoPoints, ah
 
     ; Write the game over menu title
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 04h                 ; Set row
-    mov dl, 04h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Write string to the standard output
-    lea dx, gameOverTitle       ; Load string into standard output
-    int 21h                     ; Execute
+    mov dh, 04h
+    mov dl, 04h
+    lea bp, gameOverTitle
+    call drawText
 
     mov al, playerScored        ; Retrieves who scored last
     add al, 30h                 ; Change number to ASCII
     mov [gameOverWinner+7], al  ; Update the winner text with the correct winner
 
     ; Show who won
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 06h                 ; Set row
-    mov dl, 04h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Write string to the standard output
-    lea dx, gameOverWinner      ; Load string into standard output
-    int 21h                     ; Execute
+    mov dh, 06h
+    mov dl, 04h
+    lea bp, gameOverWinner
+    call drawText
 
     ; Show replay message
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 0Ah                 ; Set row
-    mov dl, 04h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Write string to the standard output
-    lea dx, gameOverPlayAgain   ; Load string into standard output
-    int 21h                     ; Execute
+    mov dh, 0Ah
+    mov dl, 04h
+    lea bp, gameOverPlayAgain
+    call drawText
 
     ; Show exit game message
-    mov ah, 02h                 ; Set cursor position
-    mov bh, 00h                 ; Set page number
-    mov dh, 0Ch                 ; Set row
-    mov dl, 04h                 ; Set column
-    int 10h                     ; Execute
-
-    mov ah, 09h                 ; Write string to the standard output
-    lea dx, gameOverExit        ; Load string into standard output
-    int 21h                     ; Execute
+    mov dh, 0Ch
+    mov dl, 04h
+    lea bp, gameOverExit
+    call drawText
 
     ret
 drawGameOverMenu endp
@@ -494,6 +437,114 @@ drawPaddles proc near
     ret
 drawPaddles endp
 
+drawBall proc near
+    mov cx, ballX       ; X
+    mov dx, ballY       ; Y
+
+    ; Start coordinates
+    sub cx, ballBorderWidth          ; X - borderWidth
+    sub dx, ballBorderWidth          ; Y - borderWidth
+
+    jmp drawHorizontal
+
+    ; from startY to (startY + ballSize + 2 * borderWidth - 1)
+    drawVertical:
+        mov cx, ballX
+        sub cx, ballBorderWidth
+        inc dx
+
+        drawHorizontal:
+            ; Check if inside the ball boundaries
+            cmp dx, ballY
+            jl  notInsideBall
+
+            ; TODO: Add also a check to see if the not inside ball is colliding with a paddle
+
+            mov ax, ballY
+            add ax, ballSize
+            cmp dx, ax
+            jge notInsideBall
+
+            cmp cx, ballX
+            jl notInsideBall
+
+            mov ax, ballX
+            add ax, ballSize
+            cmp cx, ax
+            jge notInsideBall
+
+            ; Inside the ball boundaries, choose white as color
+            mov al, 0Fh             ; Choose white as color
+            jmp insideBall
+
+            notInsideBall:
+                ; Outise the ball boundary, choose black as color
+                mov al, 00h
+            
+            insideBall:
+                mov ah, 0Ch             ; Set the configuration to writing a pixel
+                mov bh, 00h             ; Set the page number
+                int 10h                 ; Execute
+            
+                inc cx                  ; Increment the X-coordinate
+
+                mov ax, cx
+                sub ax, ballX
+                sub ax, ballBorderWidth
+                cmp ax, ballSize
+                jle drawHorizontal
+        
+        mov ax, dx
+        sub ax, ballY
+        sub ax, ballBorderWidth
+        cmp ax, ballSize
+        jle drawVertical
+
+    ret
+drawBall endp
+
+drawUI proc near
+    cmp gameMode, 0h
+    je endDraw
+
+    cmp gameMode, 3h
+    je  endDraw
+
+    ; 29 columns -> 30th is back left
+    ; 20th column is (sorta) middle
+
+    ; Draw left player points
+    mov dh, 01h
+    mov dl, 12h
+    lea bp, playerOnePointsText
+    call drawText
+
+    ; Draw right player points
+    mov dh, 01h
+    mov dl, 16h
+    lea bp, playerTwoPointsText
+    call drawText
+
+    ; TODO: Add dashed center line
+    endDraw:
+        ret
+drawUI endp
+
+drawText proc near
+    ; dh -> Row
+    ; dl -> Column
+    ; bp -> String location
+    mov ah, 02h                 ; Set cursor position
+    mov bh, 00h                 ; Set page number
+    int 10h                     ; Execute
+
+    mov ah, 09h                 ; Write string to the standard output
+    mov dx, bp                  ; Load string into standard output
+    int 21h                     ; Execute
+
+    ret
+drawText endp
+
 moveLeftPaddle proc near
     cmp keyPressed, 57h ; W
     je  leftPaddleUp
@@ -602,72 +653,6 @@ moveRightPaddle proc near
         ret
 moveRightPaddle endp
 
-drawBall proc near
-    mov cx, ballX       ; X
-    mov dx, ballY       ; Y
-
-    ; Start coordinates
-    sub cx, ballBorderWidth          ; X - borderWidth
-    sub dx, ballBorderWidth          ; Y - borderWidth
-
-    jmp drawHorizontal
-
-    ; from startY to (startY + ballSize + 2 * borderWidth - 1)
-    drawVertical:
-        mov cx, ballX
-        sub cx, ballBorderWidth
-        inc dx
-
-        drawHorizontal:
-            ; Check if inside the ball boundaries
-            cmp dx, ballY
-            jl  notInsideBall
-
-            ; TODO: Add also a check to see if the not inside ball is colliding with a paddle
-
-            mov ax, ballY
-            add ax, ballSize
-            cmp dx, ax
-            jge notInsideBall
-
-            cmp cx, ballX
-            jl notInsideBall
-
-            mov ax, ballX
-            add ax, ballSize
-            cmp cx, ax
-            jge notInsideBall
-
-            ; Inside the ball boundaries, choose white as color
-            mov al, 0Fh             ; Choose white as color
-            jmp insideBall
-
-            notInsideBall:
-                ; Outise the ball boundary, choose black as color
-                mov al, 00h
-            
-            insideBall:
-                mov ah, 0Ch             ; Set the configuration to writing a pixel
-                mov bh, 00h             ; Set the page number
-                int 10h                 ; Execute
-            
-                inc cx                  ; Increment the X-coordinate
-
-                mov ax, cx
-                sub ax, ballX
-                sub ax, ballBorderWidth
-                cmp ax, ballSize
-                jle drawHorizontal
-        
-        mov ax, dx
-        sub ax, ballY
-        sub ax, ballBorderWidth
-        cmp ax, ballSize
-        jle drawVertical
-
-    ret
-drawBall endp
-
 moveBall proc near
     ; Move ball horizontal
     mov ax, ballVelocityX
@@ -774,57 +759,6 @@ moveBall proc near
         ret
 moveBall endp
 
-drawUI proc near
-    cmp gameMode, 0h
-    je endDraw
-
-    cmp gameMode, 3h
-    je  endDraw
-
-    ; 29 columns -> 30th is back left
-    ; 20th column is (sorta) middle
-
-    ; Draw left player points
-    mov ah, 02h                     ; Set cursor position
-    mov bh, 00h                     ; Set page number
-    mov dh, 01h                     ; Set row
-    mov dl, 12h                     ; Set column
-    int 10h
-
-    mov ah, 09h                     ; Write string to the standard output
-    lea dx, playerOnePointsText     ; Load playerOnePoints into DX
-    int 21h                         ; Print the string
-
-    ; Draw right player points
-    mov ah, 02h                     ; Set cursor position
-    mov bh, 00h                     ; Set page number
-    mov dh, 01h                     ; Set row
-    mov dl, 16h                     ; Set column
-    int 10h
-
-    mov ah, 09h                     ; Write string to the standard output
-    lea dx, playerTwoPointsText     ; Load playerOnePoints into DX
-    int 21h                         ; Print the string
-
-    ; TODO: Add dashed center line
-    endDraw:
-        ret
-drawUI endp
-
-drawTimer proc near
-    mov ah, 02h                     ; Set cursor position
-    mov bh, 00h                     ; Set page number
-    mov dh, 04h                     ; Set row
-    mov dl, 14h                     ; Set column
-    int 10h
-
-    mov ah, 09h                     ; Write string to the standard output
-    lea dx, waitTimerText           ; Load waitTimerText into DX
-    int 21h                         ; Print the string
-
-    ret
-drawTimer endp
-
 resetGame proc near
     call initializeVideoMode
     call initializeGame
@@ -836,7 +770,11 @@ resetGame proc near
     mov ah, 3h
     add ah, 30h
     mov [waitTimerText], ah
-    call drawTimer
+
+    mov dh, 04h
+    mov dl, 14h
+    lea bp, waitTimerText
+    call drawText
 
     ; 1 Second delay
     mov cx, 0Fh
@@ -848,8 +786,12 @@ resetGame proc near
     mov ah, 2h
     add ah, 30h
     mov [waitTimerText], ah
-    call drawTimer
     
+    mov dh, 04h
+    mov dl, 14h
+    lea bp, waitTimerText
+    call drawText
+
     mov cx, 0Fh
     mov dx, 4240h
     mov ah, 86h
@@ -859,7 +801,11 @@ resetGame proc near
     mov ah, 1h
     add ah, 30h
     mov [waitTimerText], ah
-    call drawTimer
+    
+    mov dh, 04h
+    mov dl, 14h
+    lea bp, waitTimerText
+    call drawText
 
     mov cx, 0Fh
     mov dx, 4240h
@@ -869,7 +815,11 @@ resetGame proc near
     mov waitTimer, 0
     mov ah, 00h
     mov [waitTimerText], ah
-    call drawTimer
+    
+    mov dh, 04h
+    mov dl, 14h
+    lea bp, waitTimerText
+    call drawText
 
     neg ballVelocityX
     call moveBall
@@ -877,6 +827,7 @@ resetGame proc near
     ret
 resetGame endp
 
+; FIXME: On opening a new game after winning/losing a part of the score is still available. Remove this
 playerOneScores proc near
     mov  playerScored, 1
     mov  ah, playerOnePoints
@@ -949,6 +900,8 @@ initializeGame proc near
 
     ret
 initializeGame endp
+
+; TODO: Make a subroutine to reset the game. The coordinates of the paddles, ball and score
 
 ; Go back to text mode
 exitGame proc near
