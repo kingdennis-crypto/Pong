@@ -70,7 +70,7 @@ main proc far
     mov     ax, data    ; Save the contents of data in the AX register
     mov     ds, ax      ; Save the AX register contents on the data segment
     pop     ax          ; Release the top item from the stack to the AX register
-    pop     ax
+    pop     ax          ; Release the second item from the stack to the AX register
 
     ; Initialize Graphics Mode 13 320x200 resolution with 256 colors
     call initializeVideoMode
@@ -180,6 +180,11 @@ drawMainMenu proc near
     ; TODO: Refactor these lines to a separate subroutine with
     ;   row, column, and text pointer as arguments
 
+    ; Set player scores back to 0
+    mov ah, 0
+    mov playerOnePoints, ah
+    mov playerTwoPoints, ah
+
     ; Draw the main title
     mov ah, 02h                 ; Set cursor position
     mov bh, 00h                 ; Set page number
@@ -261,6 +266,11 @@ drawMainMenu proc near
 drawMainMenu endp
 
 drawGameOverMenu proc near
+    ; Set player scores back to 0
+    mov ah, 0
+    mov playerOnePoints, ah
+    mov playerTwoPoints, ah
+
     ; Write the game over menu title
     mov ah, 02h                 ; Set cursor position
     mov bh, 00h                 ; Set page number
