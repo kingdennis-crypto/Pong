@@ -79,24 +79,29 @@ main proc far
         ; Listen for keypress
         call listenForKeyPress
 
+        ; Check if we're in the main menu
         cmp  gameMode, 0h
         je   mainMenuGameMode
-
-        ; FIXME: When losing a game and then via menu trying to restart the game
-        ;   will open in game over mode
+        
+        ; Check if we're in the game over menu
         cmp  gameMode, 3h
         je   gameOverMenuMode
 
+        ; Move left and right paddles
         call moveLeftPaddle
         call moveRightPaddle
 
+        ; Draw the pixels for the paddles
         call drawPaddles
 
+        ; Move and draw the pixels for the ball
         call drawBall
         call moveBall
 
+        ; Load in the UI in the game
         call drawUI
 
+        ; Repeat gameloop
         jmp gameLoop
 
         gameOverMenuMode:
@@ -156,12 +161,14 @@ listenForKeyPress proc near
         mov  gameMode, 1h
         mov  playerScored, 0h
         call initializeVideoMode
+        call resetGame
         jmp  endListen
 
     setMultiPlayer:
         mov  gameMode, 2h
         mov  playerScored, 0h
         call initializeVideoMode
+        call resetGame
         jmp  endListen
 
     noKeyPressed:
@@ -228,6 +235,7 @@ drawMainMenu proc near
     ret
 drawMainMenu endp
 
+; Draw the game over menu
 drawGameOverMenu proc near
     ; Set player scores back to 0
     mov ah, 0
@@ -437,6 +445,7 @@ drawPaddles proc near
     ret
 drawPaddles endp
 
+; Draw the ball
 drawBall proc near
     mov cx, ballX       ; X
     mov dx, ballY       ; Y
@@ -503,6 +512,7 @@ drawBall proc near
     ret
 drawBall endp
 
+; Draw the UI
 drawUI proc near
     cmp gameMode, 0h
     je endDraw
@@ -530,6 +540,7 @@ drawUI proc near
         ret
 drawUI endp
 
+; Draw a string on the given coordinates
 drawText proc near
     ; dh -> Row
     ; dl -> Column
@@ -545,6 +556,7 @@ drawText proc near
     ret
 drawText endp
 
+; Move the left paddle with user input
 moveLeftPaddle proc near
     cmp keyPressed, 57h ; W
     je  leftPaddleUp
@@ -588,6 +600,7 @@ moveLeftPaddle proc near
         ret
 moveLeftPaddle endp
 
+; Move the right paddle with user or ai input
 moveRightPaddle proc near
     cmp gameMode, 2h
     jl  aiControlled
@@ -653,6 +666,7 @@ moveRightPaddle proc near
         ret
 moveRightPaddle endp
 
+; Move the ball across the screen
 moveBall proc near
     ; Move ball horizontal
     mov ax, ballVelocityX
@@ -759,6 +773,7 @@ moveBall proc near
         ret
 moveBall endp
 
+; Reset the game and draw a timer with a 3 second timer
 resetGame proc near
     call initializeVideoMode
     call initializeGame
@@ -863,6 +878,7 @@ initializeVideoMode proc near
     ret
 initializeVideoMode endp
 
+; Move sthe paddles and ball in the correct position
 initializeGame proc near
     mov paddleLeftY, 40h
     mov paddleRightY, 40h
@@ -888,9 +904,7 @@ waitOneSecond proc near
     ret
 waitOneSecond endp
 
-; TODO: Make a subroutine to reset the game. The coordinates of the paddles, ball and score
-
-; Go back to text mode
+; Gracefully exit the game by going back to text mode
 exitGame proc near
     mov ah, 00h         ; Set the configuration to video mode
     mov al, 02h         ; Select the video mode
