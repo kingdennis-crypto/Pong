@@ -36,7 +36,7 @@ data segment para 'data'
     playerTwoPoints    db 0    ; How many points player 2 has
 
     playerScored       db 0h   ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
-    maxPointsToScore   db 5h   ; The maximum amount of points to be scored in a match
+    maxPointsToScore   db 2h   ; The maximum amount of points to be scored in a match
 
     playerOnePointsText db '0', '$' ; Points of player one to print to the screen
     playerTwoPointsText db '0', '$' ; Points of player two to print to the screen
@@ -161,6 +161,13 @@ listenForKeyPress proc near
         mov  gameMode, 1h
         mov  playerScored, 0h
         call initializeVideoMode
+        
+        mov playerOnePoints, 0h
+        mov playerTwoPoints, 0h
+
+        mov playerOnePointsText, 30h
+        mov playerTwoPointsText, 30h
+
         call resetGame
         jmp  endListen
 
@@ -168,6 +175,13 @@ listenForKeyPress proc near
         mov  gameMode, 2h
         mov  playerScored, 0h
         call initializeVideoMode
+        
+        mov playerOnePoints, 0h
+        mov playerTwoPoints, 0h
+
+        mov playerOnePointsText, 30h
+        mov playerTwoPointsText, 30h
+
         call resetGame
         jmp  endListen
 
