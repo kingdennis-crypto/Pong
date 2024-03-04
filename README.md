@@ -2,6 +2,10 @@
 
 Welcome to my version of the classic Pong game implemented in Assembly 8086. This game will provide a nostalgic experience of the iconic pong game (when there aren't any major bugs). This game can be played single and as a duo.
 
+<!-- ![Demo video of my pong game](/media/Pong.mp4) -->
+
+![A 10 second video demonstrating my pong game made in assembly](/media/Pong.gif)
+
 ## Features
 
 1. Singleplayer and multiplayer game modes
