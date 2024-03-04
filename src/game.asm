@@ -763,66 +763,42 @@ resetGame proc near
     call initializeVideoMode
     call initializeGame
 
-    ; TODO: Add a delay with a timer for the user to know when it stops
-    ; Add a delay of 1 second
-    ; Increment counter
-    mov waitTimer, 3
-    mov ah, 3h
-    add ah, 30h
-    mov [waitTimerText], ah
+    mov [waitTimerText], 33h    ; 3 seconds to wait in ASCII
 
-    mov dh, 04h
-    mov dl, 14h
-    lea bp, waitTimerText
+    mov dh, 04h                 ; Set row for the timer text
+    mov dl, 14h                 ; Set column for the timer text
+    lea bp, waitTimerText       ; Load the address of the ASCII character
     call drawText
 
-    ; 1 Second delay
-    mov cx, 0Fh
-    mov dx, 4240h
-    mov ah, 86h
-    int 15h
+    call waitOneSecond          ; Wait one second
 
-    mov waitTimer, 2
-    mov ah, 2h
-    add ah, 30h
-    mov [waitTimerText], ah
-    
-    mov dh, 04h
-    mov dl, 14h
-    lea bp, waitTimerText
+    mov [waitTimerText], 32h    ; 2 seconds to wait in ASCII
+
+    mov dh, 04h                 ; Set row for the timer text
+    mov dl, 14h                 ; Set column for the timer text
+    lea bp, waitTimerText       ; Load the address of the ASCII character
     call drawText
 
-    mov cx, 0Fh
-    mov dx, 4240h
-    mov ah, 86h
-    int 15h
+    call waitOneSecond          ; Wait one second
 
-    mov waitTimer, 1
-    mov ah, 1h
-    add ah, 30h
-    mov [waitTimerText], ah
-    
-    mov dh, 04h
-    mov dl, 14h
-    lea bp, waitTimerText
+    mov [waitTimerText], 31h    ; 1 second to wait in ASCII
+
+    mov dh, 04h                 ; Set row for the timer text
+    mov dl, 14h                 ; Set column for the timer text
+    lea bp, waitTimerText       ; Load the address of the ASCII character
     call drawText
 
-    mov cx, 0Fh
-    mov dx, 4240h
-    mov ah, 86h
-    int 15h
+    call waitOneSecond          ; Wait one second
 
-    mov waitTimer, 0
-    mov ah, 00h
-    mov [waitTimerText], ah
-    
-    mov dh, 04h
-    mov dl, 14h
-    lea bp, waitTimerText
+    mov [waitTimerText], 00h    ; Null character in ASCII
+
+    mov dh, 04h                 ; Set row for the timer text
+    mov dl, 14h                 ; Set column for the timer text
+    lea bp, waitTimerText       ; Load the address of the ASCII character
     call drawText
 
-    neg ballVelocityX
-    call moveBall
+    neg ballVelocityX           ; Switch the velocity of the ball to the other side
+    call moveBall               ; Start the game by moving the ball
 
     ret
 resetGame endp
@@ -900,6 +876,17 @@ initializeGame proc near
 
     ret
 initializeGame endp
+
+; 1 Second delay
+waitOneSecond proc near
+    ; [CX:DX] (combined) interval in microseconds
+    mov cx, 0Fh         ; Interval high word (1)
+    mov dx, 4240h       ; Interval low word  (000 000)
+    mov ah, 86h         ; Delay function
+    int 15h             ; Execite
+
+    ret
+waitOneSecond endp
 
 ; TODO: Make a subroutine to reset the game. The coordinates of the paddles, ball and score
 
