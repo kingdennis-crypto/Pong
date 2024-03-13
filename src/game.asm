@@ -12,6 +12,7 @@ data segment para 'data'
                                ; - 1: Singleplayer, 
                                ; - 2: Multiplayer,
                                ; - 3: Game Over
+                               ; - 4: Demo mode
 
     paddleLeftX        dw 0Ah  ; Current x position of the left paddle
     paddleLeftY        dw 40h  ; Current y position of the left paddle  
@@ -36,7 +37,7 @@ data segment para 'data'
     playerTwoPoints    db 0    ; How many points player 2 has
 
     playerScored       db 0h   ; Keeps track of who scored; 1 -> Player one, 2 -> Player two
-    maxPointsToScore   db 2h   ; The maximum amount of points to be scored in a match
+    maxPointsToScore   db 5h   ; The maximum amount of points to be scored in a match
 
     playerOnePointsText db '0', '$' ; Points of player one to print to the screen
     playerTwoPointsText db '0', '$' ; Points of player two to print to the screen
@@ -51,8 +52,8 @@ data segment para 'data'
     menuGameModeTwo    db '[2] - Multiplayer', '$'
     menuGameModeExit   db '[E] - Exit the game', '$' 
 
-    menuPlayerOneCtlr  db 'Player 1: UP: W - DOWN: O', '$'
-    menuPlayerTwoCtlr  db 'Player 2: UP: S - DOWN: L', '$'
+    menuPlayerOneCtlr  db 'Player 1: UP: W - DOWN: S', '$'
+    menuPlayerTwoCtlr  db 'Player 2: UP: O - DOWN: L', '$'
 
     gameOverTitle      db 'GAME OVER! GG', '$'
     gameOverWinner     db 'Player 0 won', '$'
@@ -133,6 +134,10 @@ listenForKeyPress proc near
     cmp al, 32h
     je  setMultiPlayer
 
+     ; If key '4' set demo mode
+    cmp al, 34h
+    je  setDemoMode
+
     ; If key is 'E' exit the game
     cmp al, 45h
     je  startExitProcedure
@@ -152,6 +157,10 @@ listenForKeyPress proc near
     mov keyPressed, al
     jmp endListen
 
+    noKeyPressed:
+        mov  keyPressed, 00h
+        jmp  endListen
+
     setToMainMenu:
         mov  gameMode, 0h
         call initializeVideoMode
@@ -159,34 +168,26 @@ listenForKeyPress proc near
 
     setSinglePlayer:
         mov  gameMode, 1h
-        mov  playerScored, 0h
-        call initializeVideoMode
-        
-        mov playerOnePoints, 0h
-        mov playerTwoPoints, 0h
-
-        mov playerOnePointsText, 30h
-        mov playerTwoPointsText, 30h
-
-        call resetGame
-        jmp  endListen
+        jmp  clearGameStats
 
     setMultiPlayer:
         mov  gameMode, 2h
+        jmp  clearGameStats
+    
+    setDemoMode:
+        mov  gameMode, 4h
+
+    clearGameStats:
         mov  playerScored, 0h
         call initializeVideoMode
-        
-        mov playerOnePoints, 0h
-        mov playerTwoPoints, 0h
 
-        mov playerOnePointsText, 30h
-        mov playerTwoPointsText, 30h
+        mov  playerOnePoints, 0h
+        mov  playerTwoPoints, 0h
+
+        mov  playerOnePointsText, 30h
+        mov  playerTwoPointsText, 30h
 
         call resetGame
-        jmp  endListen
-
-    noKeyPressed:
-        mov  keyPressed, 00h
         jmp  endListen
 
     startExitProcedure:
@@ -572,6 +573,9 @@ drawText endp
 
 ; Move the left paddle with user input
 moveLeftPaddle proc near
+    cmp gameMode, 4h
+    je  leftAiControlled
+
     cmp keyPressed, 57h ; W
     je  leftPaddleUp
 
@@ -584,7 +588,26 @@ moveLeftPaddle proc near
     cmp keyPressed, 73h ; s
     je  leftPaddleDown
 
-    ret
+    jmp endLeftMove
+
+    ; The paddle is controlled by AI
+    leftAiControlled:
+        ; Check if the ball is above the paddle (ballY + ballSize < paddleRightY)
+        mov ax, ballY
+        add ax, ballSize
+        ; If true -> Move paddle up
+        cmp ax, paddleLeftY
+        jl  leftPaddleUp
+
+        ; Check if the ball is below the paddle (ballY - paddleHeight > paddleRightY)
+        mov ax, ballY
+        sub ax, paddleHeight
+        ; If true -> Move paddle down
+        cmp ax, paddleLeftY
+        jg  leftPaddleDown
+
+        ; If none -> Do nothing
+        jmp endLeftMove
 
     leftPaddleUp:
         mov ax, paddleLeftY
@@ -616,8 +639,13 @@ moveLeftPaddle endp
 
 ; Move the right paddle with user or ai input
 moveRightPaddle proc near
-    cmp gameMode, 2h
-    jl  aiControlled
+    ; If gamemode is in singleplayer mode do ai control
+    cmp gameMode, 1h
+    je  rightAiControlled
+
+    ; If gamemode is in demo mode do ai control
+    cmp gameMode, 4h
+    je  rightAiControlled
     
     cmp keyPressed, 4Fh ; O
     je  rightPaddleUp
@@ -634,7 +662,7 @@ moveRightPaddle proc near
     jmp endRightMove
 
     ; The paddle is controlled by AI
-    aiControlled:
+    rightAiControlled:
         ; Check if the ball is above the paddle (ballY + ballSize < paddleRightY)
         mov ax, ballY
         add ax, ballSize
@@ -732,22 +760,22 @@ moveBall proc near
     mov ax, ballX
     add ax, ballSize
     cmp ax, paddleRightX
-    jng checkLeftPaddleCollision
+    jl  checkLeftPaddleCollision
 
     mov ax, paddleRightX
     add ax, paddleWidth
     cmp ballX, ax
-    jnl checkLeftPaddleCollision
+    jg  checkLeftPaddleCollision
 
     mov ax, ballY
     add ax, ballSize
     cmp ax, paddleRightY
-    jng checkLeftPaddleCollision
+    jl  checkLeftPaddleCollision
 
     mov ax, paddleRightY
     add ax, paddleHeight
     cmp ballY, ax
-    jnl checkLeftPaddleCollision
+    jg  checkLeftPaddleCollision
 
     jmp negateMovementHorizontal
 
@@ -756,22 +784,22 @@ moveBall proc near
         mov ax, ballX
         add ax, ballSize
         cmp ax, paddleLeftX
-        jng noCollision
+        jl  noCollision
 
         mov ax, paddleLeftX
         add ax, paddleWidth
         cmp ballX, ax
-        jnl noCollision
+        jg  noCollision
 
         mov ax, ballY
         add ax, ballSize
         cmp ax, paddleLeftY
-        jng noCollision
+        jl  noCollision
 
         mov ax, paddleLeftY
         add ax, paddleHeight
         cmp ballY, ax
-        jnl noCollision
+        jg  noCollision
 
         ; If it reached this point it means that the ball collides with the left paddle
         jmp negateMovementHorizontal
